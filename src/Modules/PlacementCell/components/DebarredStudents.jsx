@@ -1,371 +1,236 @@
-import { useEffect, useState } from "react";
-import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
+/* eslint-disable react/prop-types */
+import React, { useState, useEffect } from "react";
 import {
-  Button,
-  Container,
-  Group,
-  Modal,
+  Table,
   Text,
+  Badge,
+  Group,
+  Loader,
   TextInput,
-  Textarea,
-  Title,
-  ActionIcon,
+  Button,
+  Modal,
+  Stack
 } from "@mantine/core";
-import axios from "axios";
 import { notifications } from "@mantine/notifications";
+import { apiGet, apiPost, apiDelete } from "../api";
 import {
-  debarredStatusRoute,
-  fetchDebaredlistRoute,
-  sendNotificationRoute,
+  debarredStudentsRoute,
+  debarredStatusRoute
 } from "../../../routes/placementCellRoutes";
-import { Trash } from "@phosphor-icons/react";
 
-const columns = [
-  { accessorKey: "roll_no", header: "Roll No" },
-  { accessorKey: "name", header: "Name" },
-  { accessorKey: "description", header: "Reason" },
-];
-
-function DebarredStudents() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [debarredStudents, setDebarredStudents] = useState([]);
+function DebarModal({ opened, onClose, onSuccess }) {
   const [rollNo, setRollNo] = useState("");
-  const [reason, setReason] = useState("");
-  const [studentDetails, setStudentDetails] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [studentInfo, setStudentInfo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchDebarredStudents = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        const res = await axios.get(fetchDebaredlistRoute, {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        });
-        if (res.status === 200) {
-          setDebarredStudents(res.data);
-        }
-      } catch (error) {
-        setIsError(true);
-        notifications.show({
-          title: "Error",
-          message: "Failed to fetch debarred students.",
-          color: "red",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDebarredStudents();
-  }, []);
-
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-    setRollNo("");
-    setReason("");
-    setStudentDetails(null);
-  };
-
-  const handleFetchStudentDetails = async () => {
-    if (!rollNo) return;
-    const formattedRoll = rollNo.toUpperCase();
-
+  const handleSearch = async () => {
+    if (!rollNo.trim()) return;
+    setSearchLoading(true);
     try {
-      const token = localStorage.getItem("authToken");
-      const res = await axios.get(`${debarredStatusRoute}${formattedRoll}/`, {
-        headers: { Authorization: `Token ${token}` },
-      });
-      if (res.status === 200) {
-        setStudentDetails(res.data);
-      }
-    } catch (error) {
+      const formatted = rollNo.replace("/", "-");
+      const res = await apiGet(`${debarredStatusRoute}${formatted}/`);
+      setStudentInfo(res);
+    } catch {
       notifications.show({
         title: "Error",
-        message: `No student found with roll number: ${rollNo}`,
-        color: "red",
+        message: "Student not found",
+        color: "red"
       });
+      setStudentInfo(null);
     }
+    setSearchLoading(false);
   };
 
-  const handleUnDebarStudent = async (rollNumber) => {
-    const formattedRoll = rollNo.toUpperCase();
-
-    try {
-      const token = localStorage.getItem("authToken");
-
-      const response = await axios.delete(
-        `${debarredStatusRoute}${rollNumber}/`,
-        {
-          headers: { Authorization: `Token ${token}` },
-        },
-      );
-
-      if (response.status === 200) {
-        notifications.show({
-          title: "Success",
-          message: "Removed student from debarred list.",
-          color: "green",
-        });
-
-        setDebarredStudents((prev) =>
-          prev.filter((student) => student.roll_no !== rollNumber),
-        );
-      } else {
-        notifications.show({
-          title: "Failed",
-          message: `Failed to remove debarred status for Roll No: ${rollNumber}.`,
-          color: "red",
-        });
-      }
-
-      const notificationData = {
-        sendTo: "Student",
-        recipient: formattedRoll,
-        date: new Date().toISOString(),
-        time: new Date().toLocaleTimeString(),
-        type: "Your Un-debarred",
-        description: `You have un-debarred.`,
-      };
-
-      try {
-        await axios.post(sendNotificationRoute, notificationData, {
-          headers: { Authorization: `Token ${token}` },
-        });
-
-        notifications.show({
-          title: "Notification Sent",
-          message: "Notification sent to the student successfully!",
-          color: "green",
-        });
-      } catch (notificationError) {
-        console.error("Error sending notification:", notificationError);
-        notifications.show({
-          title: "Error Sending Notification",
-          message: "Student was un-debarred, but notification failed.",
-          color: "red",
-        });
-      }
-    } catch (error) {
-      notifications.show({
-        title: "Error",
-        message: "An error occurred while removing the debarred status.",
-        color: "red",
-      });
-    }
-  };
-
-  const handleConfirmUnDebar = (rollNumber) => {
-    const confirm = window.confirm(
-      `Are you sure you want to remove the debarred status for Roll No: ${rollNumber}?`,
-    );
-    if (confirm) {
-      handleUnDebarStudent(rollNumber);
-    }
-  };
-
-  const handleDebarStudent = async () => {
-    const formattedRoll = rollNo.toUpperCase();
-    if (!formattedRoll || !reason || !studentDetails) {
-      notifications.show({
-        title: "Error",
-        message: "Please fill all required fields and fetch student details.",
-        color: "red",
-      });
-      return;
-    }
-
+  const handleDebar = async () => {
     setLoading(true);
-    const token = localStorage.getItem("authToken");
-    const payload = {
-      rollno: formattedRoll,
-      name: studentDetails.name,
-      reason,
-    };
-
     try {
-      const response = await axios.post(
-        `${debarredStatusRoute}${formattedRoll}/`,
-        payload,
-        {
-          headers: { Authorization: `Token ${token}` },
-        },
-      );
-
-      if (response.status === 200) {
-        setDebarredStudents((prev) => [
-          ...prev,
-          {
-            roll_no: payload.rollno,
-            description: payload.reason,
-            name: payload.name,
-          },
-        ]);
-        setIsModalOpen(false);
-        setRollNo("");
-        setReason("");
-        setStudentDetails(null);
-
-        notifications.show({
-          title: "Success",
-          message: "Student debarred successfully!",
-          color: "green",
-        });
-
-        const notificationData = {
-          sendTo: "Student",
-          recipient: formattedRoll,
-          date: new Date().toISOString(),
-          time: new Date().toLocaleTimeString(),
-          type: "You are debarred",
-          description: `You have been debarred for the following reason: ${reason}`,
-        };
-
-        try {
-          await axios.post(sendNotificationRoute, notificationData, {
-            headers: { Authorization: `Token ${token}` },
-          });
-
-          notifications.show({
-            title: "Notification Sent",
-            message: "Notification sent to the student successfully!",
-            color: "green",
-          });
-        } catch (notificationError) {
-          console.error("Error sending notification:", notificationError);
-          notifications.show({
-            title: "Error Sending Notification",
-            message: "Student was debarred, but notification failed.",
-            color: "red",
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error debarring student:", error);
+      await apiPost(debarredStudentsRoute, { roll_no: rollNo });
+      notifications.show({
+        title: "Success",
+        message: `${rollNo} has been debarred`,
+        color: "green"
+      });
+      onSuccess();
+      onClose();
+      setRollNo("");
+      setStudentInfo(null);
+    } catch {
       notifications.show({
         title: "Error",
-        message: "An error occurred while debarring the student.",
-        color: "red",
+        message: "Failed to debar student",
+        color: "red"
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
-
-  const table = useMantineReactTable({
-    columns,
-    data: debarredStudents,
-    enableEditing: false,
-    getRowId: (row) => row.id,
-    enableRowActions: true,
-    positionActionsColumn: "last",
-    displayColumnDefOptions: {
-      "mrt-row-actions": {
-        header: "Actions",
-      },
-    },
-    renderRowActions: ({ row }) => (
-      <ActionIcon
-        color="red"
-        onClick={() => handleConfirmUnDebar(row.original.roll_no)}
-        title="Remove Student"
-      >
-        <Trash size={18} />
-      </ActionIcon>
-    ),
-    mantineToolbarAlertBannerProps: isError
-      ? { color: "red", children: "Error loading data" }
-      : undefined,
-    state: {
-      isLoading,
-      showAlertBanner: isError,
-    },
-  });
 
   return (
-    <Container fluid mt={32}>
-      <Container
-        fluid
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-        my={16}
-      >
-        <Title order={2}>Debarred Students</Title>
-        <Group position="right">
-          <Button variant="outline" onClick={handleOpenModal}>
-            Debar a Student
-          </Button>
-        </Group>
-      </Container>
-
-      <MantineReactTable table={table} />
-
-      <Modal
-        opened={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        centered
-        size="lg"
-        title="Debar a Student"
-      >
-        <TextInput
-          label="Roll Number"
-          placeholder="e.g., 22bcs169"
-          value={rollNo}
-          onChange={(e) => setRollNo(e.target.value)}
-          required
-          mb="md"
-        />
-        <Group position="right" mb="md">
-          <Button onClick={handleFetchStudentDetails}>
-            Fetch Student Details
+    <Modal opened={opened} onClose={onClose} title="Debar Student" centered>
+      <Stack>
+        <Group>
+          <TextInput
+            label="Roll Number"
+            placeholder="e.g. 2021BCS001"
+            value={rollNo}
+            onChange={(e) => setRollNo(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <Button
+            mt={24}
+            onClick={handleSearch}
+            loading={searchLoading}
+            variant="outline"
+          >
+            Search
           </Button>
         </Group>
 
-        {studentDetails && (
-          <>
-            <Text weight={500} mb="xs">
-              <strong>Name:</strong> {studentDetails.name}
+        {studentInfo && (
+          <div>
+            <Text size="sm">
+              <strong>Name:</strong> {studentInfo.name}
             </Text>
-            <Text weight={500} mb="xs">
-              <strong>Programme:</strong> {studentDetails.programme}
+            <Text size="sm">
+              <strong>Current Status:</strong>{" "}
+              <Badge
+                color={studentInfo.debar === "DEBAR" ? "red" : "green"}
+                variant="light"
+              >
+                {studentInfo.debar}
+              </Badge>
             </Text>
-            <Text weight={500} mb="xs">
-              <strong>Year:</strong> {studentDetails.year}
-            </Text>
-            <Text weight={500} mb="xs">
-              <strong>Department:</strong> {studentDetails.department}
-            </Text>
-            <Text weight={500} mb="xs">
-              <strong>Email:</strong> {studentDetails.email}
-            </Text>
-
-            <Textarea
-              label="Reason for Debarring"
-              placeholder="Enter a clear reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              required
-              autosize
-              minRows={3}
-              mb="lg"
-            />
-
-            <Group position="right">
-              <Button loading={loading} onClick={handleDebarStudent}>
-                Debar Student
-              </Button>
-            </Group>
-          </>
+          </div>
         )}
-      </Modal>
-    </Container>
+
+        <Button
+          onClick={handleDebar}
+          loading={loading}
+          disabled={!rollNo.trim()}
+          color="red"
+          fullWidth
+        >
+          Debar Student
+        </Button>
+      </Stack>
+    </Modal>
   );
 }
 
-export default DebarredStudents;
+export default function DebarredStudents({ role }) {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await apiGet(debarredStudentsRoute);
+      setStudents(Array.isArray(res) ? res : []);
+    } catch {
+      notifications.show({
+        title: "Error",
+        message: "Failed to fetch debarred students",
+        color: "red"
+      });
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleUndebar = async (rollNo) => {
+    try {
+      await apiDelete(debarredStudentsRoute, { roll_no: rollNo });
+      notifications.show({
+        title: "Success",
+        message: `${rollNo} has been undebarred`,
+        color: "green"
+      });
+      fetchData();
+    } catch {
+      notifications.show({
+        title: "Error",
+        message: "Failed to undebar student",
+        color: "red"
+      });
+    }
+  };
+
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", padding: "3rem" }}>
+        <Loader />
+      </div>
+    );
+
+  const isOfficer =
+    role === "placement officer" || role === "placement chairman";
+
+  return (
+    <div>
+      <Group justify="space-between" mb="lg">
+        <Text fw={600} size="xl">
+          Debarred Students
+        </Text>
+        {isOfficer && (
+          <Button color="red" onClick={() => setModalOpen(true)}>
+            + Debar Student
+          </Button>
+        )}
+      </Group>
+
+      {students.length > 0 ? (
+        <Table striped highlightOnHover withTableBorder>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>#</Table.Th>
+              <Table.Th>Roll No</Table.Th>
+              <Table.Th>Name</Table.Th>
+              <Table.Th>Status</Table.Th>
+              {isOfficer && <Table.Th>Actions</Table.Th>}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {students.map((s, i) => (
+              <Table.Tr key={s.id || i}>
+                <Table.Td>{i + 1}</Table.Td>
+                <Table.Td>{s.student_roll}</Table.Td>
+                <Table.Td>{s.student_name}</Table.Td>
+                <Table.Td>
+                  <Badge color="red" variant="light">
+                    DEBARRED
+                  </Badge>
+                </Table.Td>
+                {isOfficer && (
+                  <Table.Td>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      color="green"
+                      onClick={() => handleUndebar(s.student_roll)}
+                    >
+                      Undebar
+                    </Button>
+                  </Table.Td>
+                )}
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      ) : (
+        <Text c="dimmed" ta="center" py="xl">
+          No debarred students.
+        </Text>
+      )}
+
+      <DebarModal
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={fetchData}
+      />
+    </div>
+  );
+}

@@ -1,261 +1,229 @@
-import "@mantine/notifications/styles.css";
-import "@mantine/core/styles.css";
-import "@mantine/dates/styles.css";
-import "mantine-react-table/styles.css";
-
-import React, { useState, useRef } from "react";
-import { Tabs, Button, Container } from "@mantine/core";
-import { useSelector } from "react-redux";
+/* eslint-disable react/prop-types */
+import { lazy, Suspense, useRef, useState, useEffect, useMemo, useCallback } from "react";
+import { Button, Flex, Loader, Tabs, Text } from "@mantine/core";
 import { CaretCircleLeft, CaretCircleRight } from "@phosphor-icons/react";
-import PlacementRecordsTable from "./components/PlacementRecordsTable";
-import PlacementCalendar from "./components/PlacementCalendar";
-import PlacementSchedule from "./components/PlacementSchedule";
-import SendNotificationForm from "./components/SendNotificationForm";
-import DownloadCV from "./components/DownloadCV";
 import CustomBreadcrumbs from "../../components/Breadcrumbs";
-import CompanyRegistrationForm from "./components/CompanyRegistrationForm";
-import FieldsForm from "./components/FieldsForm";
-import DebarredStudents from "./components/DebarredStudents";
-import RestrictionsTab from "./components/RestrictionsTab";
+import classes from "./PlacementCell.module.css";
+import { apiGet } from "./api";
+import { userRolesRoute } from "../../routes/placementCellRoutes";
 
-const studentTabs = [
-  {
-    value: "schedule",
-    label: "Placement Schedule",
-    component: <PlacementSchedule />,
-  },
-  {
-    value: "stats",
-    label: "Placement Stats",
-    component: <PlacementRecordsTable />,
-  },
-  { value: "download-cv", label: "Download CV", component: <DownloadCV /> },
-  {
-    value: "placement-calendar",
-    label: "Placement Calendar",
-    component: <PlacementCalendar />,
-  },
-];
+// Lazy load all tab components
+const Dashboard = lazy(() => import("./components/Dashboard"));
+const JobPostings = lazy(() => import("./components/JobPostings"));
+const MyApplications = lazy(() => import("./components/MyApplications"));
+const MyOffers = lazy(() => import("./components/MyOffers"));
+const ManageApplications = lazy(() => import("./components/ManageApplications"));
+const Announcements = lazy(() => import("./components/Announcements"));
+const Reports = lazy(() => import("./components/Reports"));
+const PlacementSchedule = lazy(() => import("./components/PlacementSchedule"));
+const PlacementStatistics = lazy(() => import("./components/PlacementStatistics"));
+const DebarredStudents = lazy(() => import("./components/DebarredStudents"));
+const PlacementCalendar = lazy(() => import("./components/PlacementCalendar"));
+const StudentRecords = lazy(() => import("./components/StudentRecords"));
+const ManagementTab = lazy(() => import("./components/ManagementTab"));
 
-const defaultTabs = [
-  {
-    value: "schedule",
-    label: "Placement Schedule",
-    component: <PlacementSchedule />,
-  },
-  {
-    value: "stats",
-    label: "Placement Stats",
-    component: <PlacementRecordsTable />,
-  },
-  {
-    value: "placement-calendar",
-    label: "Placement Calendar",
-    component: <PlacementCalendar />,
-  },
-];
+// Initialize font
+(() => {
+  const link = document.createElement("link");
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap";
+  link.rel = "stylesheet";
+  document.head.appendChild(link);
+})();
 
-const chairmanTabs = [
-  {
-    value: "schedule",
-    label: "Placement Schedule",
-    component: <PlacementSchedule />,
-  },
-  {
-    value: "stats",
-    label: "Placement Stats",
-    component: <PlacementRecordsTable />,
-  },
-  {
-    value: "placement-calendar",
-    label: "Placement Calendar",
-    component: <PlacementCalendar />,
-  },
-  {
-    value: "debarred-students",
-    label: "Debarred Students",
-    component: <DebarredStudents />,
-  },
-];
-
-const tpoTabs = [
-  {
-    value: "schedule",
-    label: "Placement Schedule",
-    component: <PlacementSchedule />,
-  },
-  {
-    value: "send-notifications",
-    label: "Send Notifications",
-    component: <SendNotificationForm />,
-  },
-  {
-    value: "stats",
-    label: "Placement Stats",
-    component: <PlacementRecordsTable />,
-  },
-  {
-    value: "placement-calendar",
-    label: "Placement Calendar",
-    component: <PlacementCalendar />,
-  },
-  {
-    value: "company-registration",
-    label: "Company Registration",
-    component: <CompanyRegistrationForm />,
-  },
-  {
-    value: "fields",
-    label: "Fields",
-    component: <FieldsForm />,
-  },
-  {
-    value: "debarred-students",
-    label: "Debarred Students",
-    component: <DebarredStudents />,
-  },
-  {
-    value: "restrictions",
-    label: "Restrictions",
-    component: <RestrictionsTab />,
-  },
-];
-
-const styles = {
-  container: {},
-  navContainer: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
-  tabsContainer: {
-    display: "flex",
-    flexWrap: "nowrap",
-    overflowX: "auto",
-    scrollbarWidth: "none",
-    msOverflowStyle: "none",
-    marginLeft: "10px",
-  },
-  tabsList: {
-    display: "flex",
-    gap: "0px",
-  },
-  navButton: {
-    border: "none",
-    backgroundColor: "#f5f5f5",
-    cursor: "pointer",
-    fontSize: "1.75rem",
-    padding: "8px",
-    width: "50px",
-    height: "50px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: "50%",
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-
-  fusionCaretCircleIcon: {
-    fontSize: "2rem",
-  },
-
-  tab: {
-    fontWeight: "normal",
-    color: "#6c757d",
-    padding: "10px 20px",
-    cursor: "pointer", // Ensures tabs are clickable
-  },
-  activeTab: {
-    backgroundColor: "#15abff10", // Light blue background for active tab
-    color: "#15abff",
-    // fontWeight: "bold",
-    borderRadius: "4px",
-  },
-  tabContent: {
-    marginTop: "20px",
-  },
+// Tab configurations per role
+const TAB_CONFIGS = {
+  "placement officer": [
+    { title: "Dashboard" },
+    { title: "Job Postings" },
+    { title: "Companies" },
+    { title: "Applications" },
+    { title: "Announcements" },
+    { title: "Reports" },
+    { title: "Schedule" },
+    { title: "Student Records" },
+    { title: "Statistics" },
+    { title: "Debarred Students" },
+  ],
+  "placement chairman": [
+    { title: "Dashboard" },
+    { title: "Job Postings" },
+    { title: "Companies" },
+    { title: "Applications" },
+    { title: "Announcements" },
+    { title: "Reports" },
+    { title: "Schedule" },
+    { title: "Student Records" },
+    { title: "Statistics" },
+    { title: "Debarred Students" },
+  ],
+  student: [
+    { title: "Dashboard" },
+    { title: "Job Postings" },
+    { title: "My Applications" },
+    { title: "My Offers" },
+    { title: "Announcements" },
+    { title: "Schedule" },
+    { title: "Calendar" },
+  ],
+  default: [
+    { title: "Dashboard" },
+    { title: "Job Postings" },
+    { title: "Announcements" },
+    { title: "Schedule" },
+    { title: "Calendar" },
+  ],
 };
 
-function PlacementCellPage() {
-  const role = useSelector((state) => state.user.role);
-  const [activeTab, setActiveTab] = useState("schedule");
-  const tabsContainerRef = useRef(null);
+function NavigationButton({ direction, onClick }) {
+  return (
+    <Button
+      onClick={onClick}
+      variant="default"
+      p={0}
+      style={{ border: "none" }}
+    >
+      {direction === "prev" ? (
+        <CaretCircleLeft
+          className={classes.fusionCaretCircleIcon}
+          weight="light"
+        />
+      ) : (
+        <CaretCircleRight
+          className={classes.fusionCaretCircleIcon}
+          weight="light"
+        />
+      )}
+    </Button>
+  );
+}
 
-  const tabs =
-    role === "student"
-      ? studentTabs
-      : role === "placement chairman"
-        ? chairmanTabs
-        : role === "placement officer"
-          ? tpoTabs
-          : defaultTabs;
+export default function PlacementCell() {
+  const [activeTab, setActiveTab] = useState("0");
+  const [placementRole, setPlacementRole] = useState("default");
+  const [roleLoading, setRoleLoading] = useState(true);
+  const tabsListRef = useRef(null);
 
-  const handleTabChange = () => {}; // This is temporarily empty to avoid eslint error, Module team needs to implement this!
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const res = await apiGet(userRolesRoute);
+        setPlacementRole(res.role || "default");
+      } catch {
+        setPlacementRole("default");
+      }
+      setRoleLoading(false);
+    };
+    fetchRole();
+  }, []);
+
+  const tabItems = useMemo(() => {
+    return TAB_CONFIGS[placementRole] || TAB_CONFIGS.default;
+  }, [placementRole]);
+
+  const handleTabChange = (direction) => {
+    const newIndex =
+      direction === "next"
+        ? Math.min(Number(activeTab) + 1, tabItems.length - 1)
+        : Math.max(Number(activeTab) - 1, 0);
+    setActiveTab(String(newIndex));
+
+    if (tabsListRef.current) {
+      tabsListRef.current.scrollBy({
+        left: direction === "next" ? 50 : -50,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const navigateToTab = useCallback((tabTitle) => {
+    const idx = tabItems.findIndex((t) => t.title === tabTitle);
+    if (idx >= 0) setActiveTab(String(idx));
+  }, [tabItems]);
+
+  const getTabContent = () => {
+    const tabTitle = tabItems[Number(activeTab)]?.title;
+
+    switch (tabTitle) {
+      case "Dashboard":
+        return <Dashboard role={placementRole} onTabChange={navigateToTab} />;
+      case "Job Postings":
+        return <JobPostings role={placementRole} />;
+      case "My Applications":
+        return <MyApplications />;
+      case "My Offers":
+        return <MyOffers />;
+      case "Applications":
+        return <ManageApplications />;
+      case "Companies":
+        return <ManagementTab role={placementRole} />;
+      case "Announcements":
+        return <Announcements role={placementRole} />;
+      case "Reports":
+        return <Reports />;
+      case "Schedule":
+        return <PlacementSchedule role={placementRole} />;
+      case "Student Records":
+        return <StudentRecords role={placementRole} />;
+      case "Statistics":
+        return <PlacementStatistics role={placementRole} />;
+      case "Calendar":
+        return <PlacementCalendar role={placementRole} />;
+      case "Debarred Students":
+        return <DebarredStudents role={placementRole} />;
+      default:
+        return <Loader />;
+    }
+  };
+
+  if (roleLoading) {
+    return (
+      <div style={{ textAlign: "center", padding: "4rem" }}>
+        <Loader size="lg" />
+      </div>
+    );
+  }
 
   return (
-    <div style={styles.container}>
+    <div style={{ fontFamily: "Manrope" }}>
       <CustomBreadcrumbs />
-      <Container fluid mt={48}>
-        <div style={styles.navContainer}>
-          <Button
+      <Flex justify="space-between" align="center" mt="lg">
+        <Flex justify="flex-start" align="center" gap="1rem" mt="1.5rem">
+          <NavigationButton
+            direction="prev"
             onClick={() => handleTabChange("prev")}
-            variant="default"
-            p={0}
-            style={{ border: "none" }}
-          >
-            <CaretCircleLeft
-              style={styles.fusionCaretCircleIcon}
-              weight="light"
-            />
-          </Button>
+          />
 
-          <div
-            className="fusionTabsContainer"
-            style={styles.tabsContainer}
-            ref={tabsContainerRef}
-          >
-            <Tabs value={activeTab} onTabChange={setActiveTab}>
-              <Tabs.List style={styles.tabsList}>
-                {tabs.map((tab) => (
+          <div className={classes.fusionTabsContainer} ref={tabsListRef}>
+            <Tabs value={activeTab} onChange={setActiveTab}>
+              <Tabs.List style={{ display: "flex", flexWrap: "nowrap" }}>
+                {tabItems.map((item, index) => (
                   <Tabs.Tab
-                    key={tab.value}
-                    value={tab.value}
-                    style={{
-                      ...styles.tab,
-                      ...(activeTab === tab.value && styles.activeTab),
-                    }}
-                    onClick={() => setActiveTab(tab.value)}
+                    value={String(index)}
+                    key={item.title}
+                    className={
+                      activeTab === String(index)
+                        ? classes.fusionActiveRecentTab
+                        : ""
+                    }
                   >
-                    {tab.label}
+                    <Text>{item.title}</Text>
                   </Tabs.Tab>
                 ))}
               </Tabs.List>
             </Tabs>
           </div>
 
-          <Button
+          <NavigationButton
+            direction="next"
             onClick={() => handleTabChange("next")}
-            variant="default"
-            p={0}
-            style={{ border: "none" }}
-          >
-            <CaretCircleRight
-              style={styles.fusionCaretCircleIcon}
-              weight="light"
-            />
-          </Button>
-        </div>
+          />
+        </Flex>
+      </Flex>
 
-        <div style={styles.tabContent}>
-          {tabs.map((tab) =>
-            tab.value === activeTab ? (
-              <div key={tab.value}>{tab.component}</div>
-            ) : null,
-          )}
-        </div>
-      </Container>
+      <div className={classes.pageContent}>
+        <Suspense fallback={<Loader />}>{getTabContent()}</Suspense>
+      </div>
     </div>
   );
 }
-
-export default PlacementCellPage;

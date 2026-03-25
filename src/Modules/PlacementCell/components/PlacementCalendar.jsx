@@ -1,98 +1,139 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useEffect } from "react";
-import { Calendar, dateFnsLocalizer } from "react-big-calendar";
-import format from "date-fns/format";
-import parse from "date-fns/parse";
-import startOfWeek from "date-fns/startOfWeek";
-import getDay from "date-fns/getDay";
-import enUS from "date-fns/locale/en-US";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import axios from "axios";
-import { Container, Title } from "@mantine/core";
-import { useNavigate } from "react-router-dom";
+import {
+  Text,
+  Card,
+  Grid,
+  Badge,
+  Group,
+  Loader
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { apiGet } from "../api";
 import { calendarEventsRoute } from "../../../routes/placementCellRoutes";
 
-const locales = {
-  "en-US": enUS,
-};
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales,
-});
-
-function PlacementCalendar() {
+export default function PlacementCalendar() {
   const [events, setEvents] = useState([]);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchScheduleData() {
-      const token = localStorage.getItem("authToken");
-
+    const fetchData = async () => {
       try {
-        const response = await axios.get(calendarEventsRoute, {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
+        const res = await apiGet(calendarEventsRoute);
+        setEvents(Array.isArray(res) ? res : []);
+      } catch {
+        notifications.show({
+          title: "Error",
+          message: "Failed to fetch calendar events",
+          color: "red"
         });
-
-        const scheduleData = response.data.schedule_data;
-
-        if (Array.isArray(scheduleData)) {
-          const calendarEvents = scheduleData.map((item) => ({
-            id: item.id,
-            title: `${item.company_name} - Round ${item.round}`,
-            start: new Date(item.date),
-            end: new Date(item.date),
-            description: item.description,
-            type: item.type,
-          }));
-
-          setEvents(calendarEvents);
-        } else {
-          console.error("Schedule data is not an array:", scheduleData);
-        }
-      } catch (error) {
-        console.error("Error fetching schedule data:", error);
       }
-    }
-
-    fetchScheduleData();
+      setLoading(false);
+    };
+    fetchData();
   }, []);
 
-  const handleSelect = (event) => {
-    navigate(`/placement-cell/timeline?jobId=${encodeURIComponent(event.id)}`);
-  };
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", padding: "3rem" }}>
+        <Loader />
+      </div>
+    );
+
+  // Group events by month
+  const grouped = {};
+  events.forEach((e) => {
+    const d = new Date(e.date);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (!grouped[key]) {
+      grouped[key] = {
+        label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`,
+        events: []
+      };
+    }
+    grouped[key].events.push(e);
+  });
+
+  const sortedKeys = Object.keys(grouped).sort().reverse();
 
   return (
-    <div style={{ height: "50vh", width: "90%", margin: "20px auto" }}>
-      <Container
-        fluid
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-        my={32}
-      >
-        <Title order={2}>Placement Calendar</Title>
-      </Container>{" "}
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: "100%", width: "100%", fontSize: "0.85rem" }}
-        views={["month", "week", "day"]}
-        defaultView="month"
-        tooltipAccessor="description"
-        onSelectEvent={handleSelect}
-      />
+    <div>
+      <Text fw={600} size="xl" mb="lg">
+        Placement Calendar
+      </Text>
+
+      {sortedKeys.length === 0 ? (
+        <Text c="dimmed" ta="center" py="xl">
+          No events scheduled.
+        </Text>
+      ) : (
+        sortedKeys.map((key) => (
+          <div key={key} style={{ marginBottom: "1.5rem" }}>
+            <Text fw={600} size="lg" mb="sm" c="blue">
+              {grouped[key].label}
+            </Text>
+            <Grid gutter="lg">
+              {grouped[key].events.map((event) => {
+                const d = new Date(event.date);
+                const isPast = d < new Date();
+                return (
+                  <Grid.Col
+                    key={event.id}
+                    span={{ base: 12, sm: 6, md: 4 }}
+                  >
+                    <Card shadow="xs" padding="md" radius="md" withBorder>
+                      <Group justify="space-between" mb="xs">
+                        <Text fw={500}>{event.company_name || event.title}</Text>
+                        <Badge
+                          color={isPast ? "gray" : "green"}
+                          variant="light"
+                          size="sm"
+                        >
+                          {isPast ? "Past" : "Upcoming"}
+                        </Badge>
+                      </Group>
+                      <Group gap="lg">
+                        <div>
+                          <Text size="xs" c="dimmed">Date</Text>
+                          <Text size="sm" fw={500}>
+                            {d.toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric"
+                            })}
+                          </Text>
+                        </div>
+                        {event.time && (
+                          <div>
+                            <Text size="xs" c="dimmed">Time</Text>
+                            <Text size="sm" fw={500}>{event.time}</Text>
+                          </div>
+                        )}
+                        {event.location && (
+                          <div>
+                            <Text size="xs" c="dimmed">Location</Text>
+                            <Text size="sm" fw={500}>{event.location}</Text>
+                          </div>
+                        )}
+                      </Group>
+                      {event.placement_type && (
+                        <Badge mt="sm" variant="outline" color="violet" size="sm">
+                          {event.placement_type}
+                        </Badge>
+                      )}
+                    </Card>
+                  </Grid.Col>
+                );
+              })}
+            </Grid>
+          </div>
+        ))
+      )}
     </div>
   );
 }
-
-export default PlacementCalendar;

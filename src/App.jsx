@@ -25,15 +25,6 @@ import { DesignationsProvider } from "./Modules/Iwd/helper/designationContext";
 import { WorkProvider } from "./Modules/Iwd/helper/WorkContext";
 
 const PlacementCellPage = lazy(() => import("./Modules/PlacementCell"));
-const JobApplicationForm = lazy(
-  () => import("./Modules/PlacementCell/ApplyForPlacementForm"),
-);
-const PlacementEventHandeling = lazy(
-  () => import("./Modules/PlacementCell/components/PlacementEventHandeling"),
-);
-const ApplicationStatusTimeline = lazy(
-  () => import("./Modules/PlacementCell/components/Timeline"),
-);
 
 const HealthCenter = lazy(() => import("./Modules/Health Center"));
 const ConvenorBreadcumbs = lazy(
@@ -204,36 +195,6 @@ export default function App() {
             <Layout>
               <Suspense fallback={<div>Loading .... </div>}>
                 <PlacementCellPage />
-              </Suspense>
-            </Layout>
-          }
-        />
-        <Route
-          path="/placement-cell/apply-placement"
-          element={
-            <Layout>
-              <Suspense fallback={<div>Loading .... </div>}>
-                <JobApplicationForm />
-              </Suspense>
-            </Layout>
-          }
-        />
-        <Route
-          path="/placement-cell/view"
-          element={
-            <Layout>
-              <Suspense fallback={<div>Loading .... </div>}>
-                <PlacementEventHandeling />
-              </Suspense>
-            </Layout>
-          }
-        />
-        <Route
-          path="/placement-cell/timeline"
-          element={
-            <Layout>
-              <Suspense fallback={<div>Loading .... </div>}>
-                <ApplicationStatusTimeline />
               </Suspense>
             </Layout>
           }
