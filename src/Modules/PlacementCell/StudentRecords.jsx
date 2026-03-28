@@ -8,11 +8,11 @@ import {
   Loader,
   TextInput,
   Select,
-  Pagination
+  Pagination,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet } from "../api";
-import { studentRecordsRoute } from "../../../routes/placementCellRoutes";
+import { apiGet } from "./api.js";
+import { studentRecordsRoute } from "../../routes/placementCellRoutes/index.jsx";
 
 export default function StudentRecords() {
   const [students, setStudents] = useState([]);
@@ -31,7 +31,7 @@ export default function StudentRecords() {
         notifications.show({
           title: "Error",
           message: "Failed to fetch student records",
-          color: "red"
+          color: "red",
         });
       }
       setLoading(false);
@@ -53,7 +53,9 @@ export default function StudentRecords() {
     activePage * perPage,
   );
 
-  const departments = [...new Set(students.map((s) => s.department).filter(Boolean))];
+  const departments = [
+    ...new Set(students.map((s) => s.department).filter(Boolean)),
+  ];
 
   if (loading)
     return (

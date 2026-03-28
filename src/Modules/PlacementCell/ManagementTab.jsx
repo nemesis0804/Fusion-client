@@ -11,15 +11,14 @@ import {
   Stack,
   Card,
   Grid,
-  Select
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet, apiPost } from "../api";
+import { apiGet, apiPost } from "./api.js";
 import {
   registrationRoute,
   restrictionsRoute,
-  addFieldRoute
-} from "../../../routes/placementCellRoutes";
+  addFieldRoute,
+} from "../../routes/placementCellRoutes/index.jsx";
 
 function CompanyRegistration({ role }) {
   const [companies, setCompanies] = useState([]);
@@ -49,7 +48,7 @@ function CompanyRegistration({ role }) {
       notifications.show({
         title: "Success",
         message: "Company registered",
-        color: "green"
+        color: "green",
       });
       setNewCompany("");
       fetchCompanies();
@@ -57,7 +56,7 @@ function CompanyRegistration({ role }) {
       notifications.show({
         title: "Error",
         message: "Failed to register company",
-        color: "red"
+        color: "red",
       });
     }
     setAdding(false);
@@ -128,7 +127,7 @@ function Restrictions({ role }) {
     description: "",
     max_offers: 1,
     min_cpi: 0,
-    backlog_allowed: true
+    backlog_allowed: true,
   });
 
   const fetchPolicies = async () => {
@@ -151,7 +150,7 @@ function Restrictions({ role }) {
       notifications.show({
         title: "Success",
         message: "Policy added",
-        color: "green"
+        color: "green",
       });
       setModalOpen(false);
       fetchPolicies();
@@ -159,7 +158,7 @@ function Restrictions({ role }) {
       notifications.show({
         title: "Error",
         message: "Failed to add policy",
-        color: "red"
+        color: "red",
       });
     }
   };
@@ -228,9 +227,7 @@ function Restrictions({ role }) {
             label="Policy Name"
             required
             value={formData.name}
-            onChange={(e) =>
-              setFormData({ ...formData, name: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
           <TextInput
             label="Description"
@@ -276,7 +273,7 @@ function FormFields({ role }) {
       notifications.show({
         title: "Success",
         message: "Role added",
-        color: "green"
+        color: "green",
       });
       setNewRole("");
       fetchFields();
@@ -284,7 +281,7 @@ function FormFields({ role }) {
       notifications.show({
         title: "Error",
         message: "Failed to add role",
-        color: "red"
+        color: "red",
       });
     }
     setAdding(false);

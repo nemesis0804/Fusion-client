@@ -13,14 +13,13 @@ import {
   Textarea,
   Checkbox,
   Card,
-  Grid
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet, apiPost } from "../api";
+import { apiGet, apiPost } from "./api.js";
 import {
   jobApplicationsRoute,
-  jobPostingsRoute
-} from "../../../routes/placementCellRoutes";
+  jobPostingsRoute,
+} from "../../routes/placementCellRoutes/index.jsx";
 
 const STATUS_CHOICES = [
   { value: "APPLIED", label: "Applied" },
@@ -39,7 +38,7 @@ const STATUS_COLORS = {
   OFFER_EXTENDED: "violet",
   OFFER_ACCEPTED: "green",
   OFFER_REJECTED: "gray",
-  REJECTED: "red"
+  REJECTED: "red",
 };
 
 export default function ManageApplications() {
@@ -64,7 +63,11 @@ export default function ManageApplications() {
           setSelected(data[0]);
         }
       } catch {
-        notifications.show({ title: "Error", message: "Failed to load postings", color: "red" });
+        notifications.show({
+          title: "Error",
+          message: "Failed to load postings",
+          color: "red",
+        });
       }
       setLoading(false);
     };
@@ -79,7 +82,11 @@ export default function ManageApplications() {
       setApplications(Array.isArray(res) ? res : []);
       setCheckedIds([]);
     } catch {
-      notifications.show({ title: "Error", message: "Failed to load applications", color: "red" });
+      notifications.show({
+        title: "Error",
+        message: "Failed to load applications",
+        color: "red",
+      });
       setApplications([]);
     }
     setAppsLoading(false);
@@ -98,15 +105,23 @@ export default function ManageApplications() {
     try {
       await apiPost(`${jobApplicationsRoute}${statusModal.id}/update_status/`, {
         status: newStatus,
-        remarks
+        remarks,
       });
-      notifications.show({ title: "Success", message: "Status updated", color: "green" });
+      notifications.show({
+        title: "Success",
+        message: "Status updated",
+        color: "green",
+      });
       setStatusModal(null);
       setNewStatus("");
       setRemarks("");
       fetchApplications(selected.id);
     } catch {
-      notifications.show({ title: "Error", message: "Failed to update", color: "red" });
+      notifications.show({
+        title: "Error",
+        message: "Failed to update",
+        color: "red",
+      });
     }
   };
 
@@ -115,25 +130,37 @@ export default function ManageApplications() {
     try {
       await Promise.all(
         checkedIds.map((id) =>
-          apiPost(`${jobApplicationsRoute}${id}/update_status/`, { status: "SHORTLISTED" })
-        )
+          apiPost(`${jobApplicationsRoute}${id}/update_status/`, {
+            status: "SHORTLISTED",
+          }),
+        ),
       );
-      notifications.show({ title: "Success", message: `${checkedIds.length} applications shortlisted`, color: "green" });
+      notifications.show({
+        title: "Success",
+        message: `${checkedIds.length} applications shortlisted`,
+        color: "green",
+      });
       setCheckedIds([]);
       fetchApplications(selected.id);
     } catch {
-      notifications.show({ title: "Error", message: "Failed to bulk shortlist", color: "red" });
+      notifications.show({
+        title: "Error",
+        message: "Failed to bulk shortlist",
+        color: "red",
+      });
     }
   };
 
   const toggleCheck = (id) => {
     setCheckedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
   const toggleAll = () => {
-    const appliedIds = filtered.filter((a) => a.status === "APPLIED").map((a) => a.id);
+    const appliedIds = filtered
+      .filter((a) => a.status === "APPLIED")
+      .map((a) => a.id);
     if (checkedIds.length === appliedIds.length) {
       setCheckedIds([]);
     } else {
@@ -141,18 +168,30 @@ export default function ManageApplications() {
     }
   };
 
-  if (loading) return <div style={{ textAlign: "center", padding: "3rem" }}><Loader /></div>;
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", padding: "3rem" }}>
+        <Loader />
+      </div>
+    );
 
   return (
     <div>
-      <Text fw={600} size="xl" mb="lg">Manage Applications</Text>
+      <Text fw={600} size="xl" mb="lg">
+        Manage Applications
+      </Text>
 
       <Group mb="md">
         <Select
           label="Select Job Posting"
-          data={postings.map((p) => ({ value: String(p.id), label: `${p.title} — ${p.company_name}` }))}
+          data={postings.map((p) => ({
+            value: String(p.id),
+            label: `${p.title} — ${p.company_name}`,
+          }))}
           value={selected ? String(selected.id) : null}
-          onChange={(val) => setSelected(postings.find((p) => String(p.id) === val))}
+          onChange={(val) =>
+            setSelected(postings.find((p) => String(p.id) === val))
+          }
           searchable
           w={400}
         />
@@ -169,14 +208,18 @@ export default function ManageApplications() {
       {selected && (
         <Card withBorder p="sm" mb="md">
           <Group justify="space-between">
-            <Text fw={500}>{selected.title} — {selected.company_name}</Text>
+            <Text fw={500}>
+              {selected.title} — {selected.company_name}
+            </Text>
             <Badge>{applications.length} applications</Badge>
           </Group>
         </Card>
       )}
 
       {appsLoading ? (
-        <div style={{ textAlign: "center", padding: "2rem" }}><Loader /></div>
+        <div style={{ textAlign: "center", padding: "2rem" }}>
+          <Loader />
+        </div>
       ) : filtered.length > 0 ? (
         <>
           <Table striped highlightOnHover withTableBorder>
@@ -184,7 +227,11 @@ export default function ManageApplications() {
               <Table.Tr>
                 <Table.Th>
                   <Checkbox
-                    checked={checkedIds.length > 0 && checkedIds.length === filtered.filter((a) => a.status === "APPLIED").length}
+                    checked={
+                      checkedIds.length > 0 &&
+                      checkedIds.length ===
+                        filtered.filter((a) => a.status === "APPLIED").length
+                    }
                     onChange={toggleAll}
                   />
                 </Table.Th>
@@ -209,13 +256,26 @@ export default function ManageApplications() {
                   <Table.Td>{app.student_roll}</Table.Td>
                   <Table.Td fw={500}>{app.student_name}</Table.Td>
                   <Table.Td>
-                    <Badge color={STATUS_COLORS[app.status] || "gray"} variant="light">
-                      {STATUS_CHOICES.find((s) => s.value === app.status)?.label || app.status}
+                    <Badge
+                      color={STATUS_COLORS[app.status] || "gray"}
+                      variant="light"
+                    >
+                      {STATUS_CHOICES.find((s) => s.value === app.status)
+                        ?.label || app.status}
                     </Badge>
                   </Table.Td>
-                  <Table.Td>{new Date(app.applied_at).toLocaleDateString("en-IN")}</Table.Td>
                   <Table.Td>
-                    <Button size="xs" variant="light" onClick={() => { setStatusModal(app); setNewStatus(app.status); }}>
+                    {new Date(app.applied_at).toLocaleDateString("en-IN")}
+                  </Table.Td>
+                  <Table.Td>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      onClick={() => {
+                        setStatusModal(app);
+                        setNewStatus(app.status);
+                      }}
+                    >
                       Update
                     </Button>
                   </Table.Td>
@@ -231,7 +291,9 @@ export default function ManageApplications() {
           )}
         </>
       ) : (
-        <Text c="dimmed" ta="center" py="xl">No applications found.</Text>
+        <Text c="dimmed" ta="center" py="xl">
+          No applications found.
+        </Text>
       )}
 
       <Modal
@@ -253,7 +315,9 @@ export default function ManageApplications() {
             onChange={(e) => setRemarks(e.target.value)}
             rows={3}
           />
-          <Button onClick={handleUpdateStatus} fullWidth>Update</Button>
+          <Button onClick={handleUpdateStatus} fullWidth>
+            Update
+          </Button>
         </Stack>
       </Modal>
     </div>

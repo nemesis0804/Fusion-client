@@ -9,14 +9,14 @@ import {
   TextInput,
   Button,
   Modal,
-  Stack
+  Stack,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet, apiPost, apiDelete } from "../api";
+import { apiGet, apiPost, apiDelete } from "./api.js";
 import {
   debarredStudentsRoute,
-  debarredStatusRoute
-} from "../../../routes/placementCellRoutes";
+  debarredStatusRoute,
+} from "../../routes/placementCellRoutes/index.jsx";
 
 function DebarModal({ opened, onClose, onSuccess }) {
   const [rollNo, setRollNo] = useState("");
@@ -35,7 +35,7 @@ function DebarModal({ opened, onClose, onSuccess }) {
       notifications.show({
         title: "Error",
         message: "Student not found",
-        color: "red"
+        color: "red",
       });
       setStudentInfo(null);
     }
@@ -49,7 +49,7 @@ function DebarModal({ opened, onClose, onSuccess }) {
       notifications.show({
         title: "Success",
         message: `${rollNo} has been debarred`,
-        color: "green"
+        color: "green",
       });
       onSuccess();
       onClose();
@@ -59,7 +59,7 @@ function DebarModal({ opened, onClose, onSuccess }) {
       notifications.show({
         title: "Error",
         message: "Failed to debar student",
-        color: "red"
+        color: "red",
       });
     }
     setLoading(false);
@@ -131,7 +131,7 @@ export default function DebarredStudents({ role }) {
       notifications.show({
         title: "Error",
         message: "Failed to fetch debarred students",
-        color: "red"
+        color: "red",
       });
     }
     setLoading(false);
@@ -147,14 +147,14 @@ export default function DebarredStudents({ role }) {
       notifications.show({
         title: "Success",
         message: `${rollNo} has been undebarred`,
-        color: "green"
+        color: "green",
       });
       fetchData();
     } catch {
       notifications.show({
         title: "Error",
         message: "Failed to undebar student",
-        color: "red"
+        color: "red",
       });
     }
   };

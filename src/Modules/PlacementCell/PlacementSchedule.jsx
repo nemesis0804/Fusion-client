@@ -15,16 +15,16 @@ import {
   Select,
   Textarea,
   NumberInput,
-  Stack
+  Stack,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet, apiPost, apiDelete } from "../api";
+import { apiGet, apiPost, apiDelete } from "./api.js";
 import {
   placementScheduleRoute,
   placementScheduleDetailRoute,
   registrationRoute,
-  formFieldsRoute
-} from "../../../routes/placementCellRoutes";
+  formFieldsRoute,
+} from "../../routes/placementCellRoutes/index.jsx";
 
 function ScheduleCard({ item, role, onRefresh }) {
   const handleDelete = async () => {
@@ -33,14 +33,14 @@ function ScheduleCard({ item, role, onRefresh }) {
       notifications.show({
         title: "Success",
         message: "Schedule deleted",
-        color: "green"
+        color: "green",
       });
       onRefresh();
     } catch {
       notifications.show({
         title: "Error",
         message: "Failed to delete schedule",
-        color: "red"
+        color: "red",
       });
     }
   };
@@ -132,7 +132,7 @@ function AddScheduleModal({ opened, onClose, onSuccess }) {
     placement_type: "PLACEMENT",
     role: "",
     description: "",
-    schedule_at: ""
+    schedule_at: "",
   });
   const [, setCompanies] = useState([]);
   const [, setRoles] = useState([]);
@@ -145,15 +145,9 @@ function AddScheduleModal({ opened, onClose, onSuccess }) {
         apiGet(formFieldsRoute).catch(() => ({ roles: [] })),
       ]).then(([compData, fieldData]) => {
         setCompanies(
-          Array.isArray(compData)
-            ? compData.map((c) => c.company_name)
-            : [],
+          Array.isArray(compData) ? compData.map((c) => c.company_name) : [],
         );
-        setRoles(
-          fieldData.roles
-            ? fieldData.roles.map((r) => r.role)
-            : [],
-        );
+        setRoles(fieldData.roles ? fieldData.roles.map((r) => r.role) : []);
       });
     }
   }, [opened]);
@@ -165,7 +159,7 @@ function AddScheduleModal({ opened, onClose, onSuccess }) {
       notifications.show({
         title: "Success",
         message: "Schedule added successfully",
-        color: "green"
+        color: "green",
       });
       onSuccess();
       onClose();
@@ -173,7 +167,7 @@ function AddScheduleModal({ opened, onClose, onSuccess }) {
       notifications.show({
         title: "Error",
         message: "Failed to add schedule",
-        color: "red"
+        color: "red",
       });
     }
     setLoading(false);
@@ -200,16 +194,12 @@ function AddScheduleModal({ opened, onClose, onSuccess }) {
           label="Placement Type"
           data={["PLACEMENT", "PBI", "HIGHER STUDIES"]}
           value={formData.placement_type}
-          onChange={(val) =>
-            setFormData({ ...formData, placement_type: val })
-          }
+          onChange={(val) => setFormData({ ...formData, placement_type: val })}
         />
         <TextInput
           label="Role / Position"
           value={formData.role}
-          onChange={(e) =>
-            setFormData({ ...formData, role: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
         />
         <Group grow>
           <TextInput
@@ -225,9 +215,7 @@ function AddScheduleModal({ opened, onClose, onSuccess }) {
             label="Time"
             type="time"
             value={formData.time}
-            onChange={(e) =>
-              setFormData({ ...formData, time: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
           />
         </Group>
         <TextInput
@@ -276,7 +264,7 @@ export default function PlacementSchedule({ role }) {
       notifications.show({
         title: "Error",
         message: "Failed to fetch schedules",
-        color: "red"
+        color: "red",
       });
     }
     setLoading(false);
@@ -307,17 +295,13 @@ export default function PlacementSchedule({ role }) {
           Placement Events
         </Text>
         {(role === "placement officer" || role === "placement chairman") && (
-          <Button onClick={() => setModalOpen(true)}>
-            + Add Event
-          </Button>
+          <Button onClick={() => setModalOpen(true)}>+ Add Event</Button>
         )}
       </Group>
 
       <Tabs defaultValue="upcoming" variant="pills">
         <Tabs.List mb="md">
-          <Tabs.Tab value="upcoming">
-            Upcoming ({activeEvents.length})
-          </Tabs.Tab>
+          <Tabs.Tab value="upcoming">Upcoming ({activeEvents.length})</Tabs.Tab>
           <Tabs.Tab value="past">Past ({pastEvents.length})</Tabs.Tab>
           <Tabs.Tab value="all">All ({data.length})</Tabs.Tab>
         </Tabs.List>
@@ -343,10 +327,7 @@ export default function PlacementSchedule({ role }) {
                 <>
                   <Grid gutter="lg">
                     {paged.map((item) => (
-                      <Grid.Col
-                        key={item.id}
-                        span={{ base: 12, sm: 6, lg: 4 }}
-                      >
+                      <Grid.Col key={item.id} span={{ base: 12, sm: 6, lg: 4 }}>
                         <ScheduleCard
                           item={item}
                           role={role}

@@ -1,20 +1,23 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from "react";
-import {
-  Text,
-  Card,
-  Grid,
-  Badge,
-  Group,
-  Loader
-} from "@mantine/core";
+import { Text, Card, Grid, Badge, Group, Loader } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet } from "../api";
-import { calendarEventsRoute } from "../../../routes/placementCellRoutes";
+import { apiGet } from "./api.js";
+import { calendarEventsRoute } from "../../routes/placementCellRoutes/index.jsx";
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export default function PlacementCalendar() {
@@ -30,7 +33,7 @@ export default function PlacementCalendar() {
         notifications.show({
           title: "Error",
           message: "Failed to fetch calendar events",
-          color: "red"
+          color: "red",
         });
       }
       setLoading(false);
@@ -53,7 +56,7 @@ export default function PlacementCalendar() {
     if (!grouped[key]) {
       grouped[key] = {
         label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`,
-        events: []
+        events: [],
       };
     }
     grouped[key].events.push(e);
@@ -82,13 +85,12 @@ export default function PlacementCalendar() {
                 const d = new Date(event.date);
                 const isPast = d < new Date();
                 return (
-                  <Grid.Col
-                    key={event.id}
-                    span={{ base: 12, sm: 6, md: 4 }}
-                  >
+                  <Grid.Col key={event.id} span={{ base: 12, sm: 6, md: 4 }}>
                     <Card shadow="xs" padding="md" radius="md" withBorder>
                       <Group justify="space-between" mb="xs">
-                        <Text fw={500}>{event.company_name || event.title}</Text>
+                        <Text fw={500}>
+                          {event.company_name || event.title}
+                        </Text>
                         <Badge
                           color={isPast ? "gray" : "green"}
                           variant="light"
@@ -99,30 +101,45 @@ export default function PlacementCalendar() {
                       </Group>
                       <Group gap="lg">
                         <div>
-                          <Text size="xs" c="dimmed">Date</Text>
+                          <Text size="xs" c="dimmed">
+                            Date
+                          </Text>
                           <Text size="sm" fw={500}>
                             {d.toLocaleDateString("en-IN", {
                               day: "numeric",
                               month: "short",
-                              year: "numeric"
+                              year: "numeric",
                             })}
                           </Text>
                         </div>
                         {event.time && (
                           <div>
-                            <Text size="xs" c="dimmed">Time</Text>
-                            <Text size="sm" fw={500}>{event.time}</Text>
+                            <Text size="xs" c="dimmed">
+                              Time
+                            </Text>
+                            <Text size="sm" fw={500}>
+                              {event.time}
+                            </Text>
                           </div>
                         )}
                         {event.location && (
                           <div>
-                            <Text size="xs" c="dimmed">Location</Text>
-                            <Text size="sm" fw={500}>{event.location}</Text>
+                            <Text size="xs" c="dimmed">
+                              Location
+                            </Text>
+                            <Text size="sm" fw={500}>
+                              {event.location}
+                            </Text>
                           </div>
                         )}
                       </Group>
                       {event.placement_type && (
-                        <Badge mt="sm" variant="outline" color="violet" size="sm">
+                        <Badge
+                          mt="sm"
+                          variant="outline"
+                          color="violet"
+                          size="sm"
+                        >
                           {event.placement_type}
                         </Badge>
                       )}

@@ -12,10 +12,10 @@ import {
   Divider,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet } from "../api";
-import { dashboardRoute } from "../../../routes/placementCellRoutes";
+import { apiGet } from "./api.js";
+import { dashboardRoute } from "../../routes/placementCellRoutes/index.jsx";
 
-function StatCard({ label, value, color, icon }) {
+function StatCard({ label, value, color }) {
   const colors = {
     blue: { bg: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" },
     green: { bg: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)" },
@@ -52,7 +52,7 @@ function StatCard({ label, value, color, icon }) {
   );
 }
 
-export default function Dashboard({ role, onTabChange }) {
+export default function Dashboard({ onTabChange }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 

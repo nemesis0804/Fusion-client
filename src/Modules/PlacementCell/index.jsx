@@ -1,35 +1,34 @@
 /* eslint-disable react/prop-types */
-import { lazy, Suspense, useRef, useState, useEffect, useMemo, useCallback } from "react";
-import { Button, Flex, Loader, Tabs, Text } from "@mantine/core";
-import { CaretCircleLeft, CaretCircleRight } from "@phosphor-icons/react";
+import {
+  lazy,
+  Suspense,
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
+import { Flex, Loader, Tabs, Text } from "@mantine/core";
 import CustomBreadcrumbs from "../../components/Breadcrumbs";
 import classes from "./PlacementCell.module.css";
 import { apiGet } from "./api";
 import { userRolesRoute } from "../../routes/placementCellRoutes";
+import NavigationButton from "./components/NavigationButton";
 
 // Lazy load all tab components
-const Dashboard = lazy(() => import("./components/Dashboard"));
-const JobPostings = lazy(() => import("./components/JobPostings"));
-const MyApplications = lazy(() => import("./components/MyApplications"));
-const MyOffers = lazy(() => import("./components/MyOffers"));
-const ManageApplications = lazy(() => import("./components/ManageApplications"));
-const Announcements = lazy(() => import("./components/Announcements"));
-const Reports = lazy(() => import("./components/Reports"));
-const PlacementSchedule = lazy(() => import("./components/PlacementSchedule"));
-const PlacementStatistics = lazy(() => import("./components/PlacementStatistics"));
-const DebarredStudents = lazy(() => import("./components/DebarredStudents"));
-const PlacementCalendar = lazy(() => import("./components/PlacementCalendar"));
-const StudentRecords = lazy(() => import("./components/StudentRecords"));
-const ManagementTab = lazy(() => import("./components/ManagementTab"));
-
-// Initialize font
-(() => {
-  const link = document.createElement("link");
-  link.href =
-    "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap";
-  link.rel = "stylesheet";
-  document.head.appendChild(link);
-})();
+const Dashboard = lazy(() => import("./Dashboard.jsx"));
+const JobPostings = lazy(() => import("./JobPostings.jsx"));
+const MyApplications = lazy(() => import("./MyApplications.jsx"));
+const MyOffers = lazy(() => import("./MyOffers.jsx"));
+const ManageApplications = lazy(() => import("./ManageApplications.jsx"));
+const Announcements = lazy(() => import("./Announcements.jsx"));
+const Reports = lazy(() => import("./Reports.jsx"));
+const PlacementSchedule = lazy(() => import("./PlacementSchedule.jsx"));
+const PlacementStatistics = lazy(() => import("./PlacementStatistics.jsx"));
+const DebarredStudents = lazy(() => import("./DebarredStudents.jsx"));
+const PlacementCalendar = lazy(() => import("./PlacementCalendar.jsx"));
+const StudentRecords = lazy(() => import("./StudentRecords.jsx"));
+const ManagementTab = lazy(() => import("./ManagementTab.jsx"));
 
 // Tab configurations per role
 const TAB_CONFIGS = {
@@ -75,28 +74,14 @@ const TAB_CONFIGS = {
   ],
 };
 
-function NavigationButton({ direction, onClick }) {
-  return (
-    <Button
-      onClick={onClick}
-      variant="default"
-      p={0}
-      style={{ border: "none" }}
-    >
-      {direction === "prev" ? (
-        <CaretCircleLeft
-          className={classes.fusionCaretCircleIcon}
-          weight="light"
-        />
-      ) : (
-        <CaretCircleRight
-          className={classes.fusionCaretCircleIcon}
-          weight="light"
-        />
-      )}
-    </Button>
-  );
-}
+// Initialize font
+(() => {
+  const link = document.createElement("link");
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap";
+  link.rel = "stylesheet";
+  document.head.appendChild(link);
+})();
 
 export default function PlacementCell() {
   const [activeTab, setActiveTab] = useState("0");
@@ -136,10 +121,13 @@ export default function PlacementCell() {
     }
   };
 
-  const navigateToTab = useCallback((tabTitle) => {
-    const idx = tabItems.findIndex((t) => t.title === tabTitle);
-    if (idx >= 0) setActiveTab(String(idx));
-  }, [tabItems]);
+  const navigateToTab = useCallback(
+    (tabTitle) => {
+      const idx = tabItems.findIndex((t) => t.title === tabTitle);
+      if (idx >= 0) setActiveTab(String(idx));
+    },
+    [tabItems],
+  );
 
   const getTabContent = () => {
     const tabTitle = tabItems[Number(activeTab)]?.title;

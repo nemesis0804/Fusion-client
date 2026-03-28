@@ -13,18 +13,18 @@ import {
   Stack,
   NumberInput,
   Card,
-  Grid
+  Grid,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet, apiPost, apiDelete } from "../api";
-import { statisticsRoute } from "../../../routes/placementCellRoutes";
+import { apiGet, apiPost, apiDelete } from "./api.js";
+import { statisticsRoute } from "../../routes/placementCellRoutes/index.jsx";
 
 function StatsCard({ label, value, color }) {
   const gradients = {
     blue: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
     green: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
     orange: "linear-gradient(135deg, #f5af19 0%, #f12711 100%)",
-    purple: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    purple: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   };
 
   return (
@@ -51,7 +51,7 @@ function AddRecordModal({ opened, onClose, onSuccess }) {
     ctc: 0,
     year: new Date().getFullYear(),
     test_type: "",
-    test_score: ""
+    test_score: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -62,7 +62,7 @@ function AddRecordModal({ opened, onClose, onSuccess }) {
       notifications.show({
         title: "Success",
         message: "Record added",
-        color: "green"
+        color: "green",
       });
       onSuccess();
       onClose();
@@ -72,13 +72,13 @@ function AddRecordModal({ opened, onClose, onSuccess }) {
         ctc: 0,
         year: new Date().getFullYear(),
         test_type: "",
-        test_score: ""
+        test_score: "",
       });
     } catch {
       notifications.show({
         title: "Error",
         message: "Failed to add record",
-        color: "red"
+        color: "red",
       });
     }
     setLoading(false);
@@ -96,17 +96,13 @@ function AddRecordModal({ opened, onClose, onSuccess }) {
           label="Type"
           data={["PLACEMENT", "PBI", "HIGHER STUDIES"]}
           value={formData.placement_type}
-          onChange={(val) =>
-            setFormData({ ...formData, placement_type: val })
-          }
+          onChange={(val) => setFormData({ ...formData, placement_type: val })}
         />
         <TextInput
           label="Company / University Name"
           required
           value={formData.name}
-          onChange={(e) =>
-            setFormData({ ...formData, name: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
         <Group grow>
           <NumberInput
@@ -168,7 +164,7 @@ export default function PlacementStatistics({ role }) {
       notifications.show({
         title: "Error",
         message: "Failed to fetch statistics",
-        color: "red"
+        color: "red",
       });
     }
     setLoading(false);
@@ -184,14 +180,14 @@ export default function PlacementStatistics({ role }) {
       notifications.show({
         title: "Success",
         message: "Record deleted",
-        color: "green"
+        color: "green",
       });
       fetchData();
     } catch {
       notifications.show({
         title: "Error",
         message: "Failed to delete record",
-        color: "red"
+        color: "red",
       });
     }
   };
@@ -203,9 +199,9 @@ export default function PlacementStatistics({ role }) {
       </div>
     );
 
-  const years = [
-    ...new Set(stats.records.map((r) => String(r.year))),
-  ].sort((a, b) => b - a);
+  const years = [...new Set(stats.records.map((r) => String(r.year)))].sort(
+    (a, b) => b - a,
+  );
 
   return (
     <div>
@@ -243,7 +239,10 @@ export default function PlacementStatistics({ role }) {
         />
         <Select
           placeholder="Filter by Year"
-          data={[{ value: "", label: "All Years" }, ...years.map((y) => ({ value: y, label: y }))]}
+          data={[
+            { value: "", label: "All Years" },
+            ...years.map((y) => ({ value: y, label: y })),
+          ]}
           value={filterYear}
           onChange={setFilterYear}
           clearable
@@ -288,9 +287,7 @@ export default function PlacementStatistics({ role }) {
                 <Table.Td>{r.year}</Table.Td>
                 <Table.Td>{r.ctc ? `₹${r.ctc} LPA` : "-"}</Table.Td>
                 <Table.Td>
-                  {r.test_type
-                    ? `${r.test_type}: ${r.test_score}`
-                    : "-"}
+                  {r.test_type ? `${r.test_type}: ${r.test_score}` : "-"}
                 </Table.Td>
                 {(role === "placement officer" ||
                   role === "placement chairman") && (
