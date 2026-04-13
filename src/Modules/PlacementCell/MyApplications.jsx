@@ -2,8 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { Text, Table, Badge, Group, Loader, Card, Button } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet } from "./api.js";
-import { mySummaryRoute } from "../../routes/placementCellRoutes/index.jsx";
+import { apiGet, apiDelete } from "./api.js";
+import {
+  mySummaryRoute,
+  jobApplicationsRoute,
+} from "../../routes/placementCellRoutes/index.jsx";
 
 const STATUS_COLORS = {
   APPLIED: "blue",
@@ -42,22 +45,46 @@ export default function MyApplications() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchData = async () => {
+    try {
+      const res = await apiGet(mySummaryRoute);
+      setData(res);
+    } catch {
+      notifications.show({
+        title: "Error",
+        message: "Failed to load applications",
+        color: "red",
+      });
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await apiGet(mySummaryRoute);
-        setData(res);
-      } catch {
-        notifications.show({
-          title: "Error",
-          message: "Failed to load applications",
-          color: "red",
-        });
-      }
-      setLoading(false);
-    };
     fetchData();
   }, []);
+
+  const handleWithdraw = async (applicationId) => {
+    if (
+      !window.confirm("Are you sure you want to withdraw this application?")
+    ) {
+      return;
+    }
+    try {
+      await apiDelete(`${jobApplicationsRoute}${applicationId}/`);
+      notifications.show({
+        title: "Success",
+        message: "Application withdrawn successfully",
+        color: "green",
+      });
+      fetchData(); // Refresh the list
+    } catch {
+      notifications.show({
+        title: "Error",
+        message: "Failed to withdraw application",
+        color: "red",
+      });
+    }
+  };
 
   if (loading)
     return (
@@ -111,6 +138,7 @@ export default function MyApplications() {
               <Table.Th>Applied On</Table.Th>
               <Table.Th>Status</Table.Th>
               <Table.Th>Remarks</Table.Th>
+              <Table.Th>Actions</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -131,6 +159,22 @@ export default function MyApplications() {
                   </Badge>
                 </Table.Td>
                 <Table.Td>{app.remarks || "-"}</Table.Td>
+                <Table.Td>
+                  {app.status === "APPLIED" ? (
+                    <Button
+                      size="xs"
+                      color="red"
+                      variant="light"
+                      onClick={() => handleWithdraw(app.id)}
+                    >
+                      Withdraw
+                    </Button>
+                  ) : (
+                    <Text size="xs" c="dimmed">
+                      N/A
+                    </Text>
+                  )}
+                </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>

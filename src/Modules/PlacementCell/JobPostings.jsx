@@ -491,6 +491,9 @@ export default function JobPostings({ role }) {
   const [selectedPosting, setSelectedPosting] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState("ALL");
   const [page, setPage] = useState(1);
   const perPage = 9;
 
@@ -515,7 +518,45 @@ export default function JobPostings({ role }) {
 
   const isOfficer =
     role === "placement officer" || role === "placement chairman";
-  const paged = postings.slice((page - 1) * perPage, page * perPage);
+
+  const filteredPostings = postings.filter((p) => {
+    // Search
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (
+        !p.title?.toLowerCase().includes(q) &&
+        !p.company_name?.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+    }
+    // Job Type
+    if (filterType !== "ALL" && p.job_type !== filterType) {
+      return false;
+    }
+    // Status
+    if (filterStatus !== "ALL") {
+      const deadline = p.application_deadline
+        ? new Date(p.application_deadline)
+        : null;
+      const deadlinePassed = !!(deadline && deadline < new Date());
+      if (filterStatus === "ACTIVE") {
+        if (!p.is_active || deadlinePassed) return false;
+      } else if (filterStatus === "DEADLINE_PASSED") {
+        if (!deadlinePassed) return false;
+      } else if (filterStatus === "INACTIVE") {
+        if (p.is_active) return false;
+      }
+    }
+    return true;
+  });
+
+  const paged = filteredPostings.slice((page - 1) * perPage, page * perPage);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, filterType, filterStatus]);
 
   if (loading)
     return (
@@ -537,7 +578,39 @@ export default function JobPostings({ role }) {
         )}
       </Group>
 
-      {postings.length > 0 ? (
+      <Group grow mb="xl">
+        <TextInput
+          placeholder="Search by title or company..."
+          label="Search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.currentTarget.value)}
+        />
+        <Select
+          label="Job Type"
+          data={[
+            { value: "ALL", label: "All Types" },
+            { value: "PLACEMENT", label: "Placement" },
+            { value: "INTERNSHIP", label: "Internship" },
+            { value: "PPO", label: "PPO" },
+            { value: "PBI", label: "PBI" },
+          ]}
+          value={filterType}
+          onChange={setFilterType}
+        />
+        <Select
+          label="Status"
+          data={[
+            { value: "ALL", label: "All Statuses" },
+            { value: "ACTIVE", label: "Active" },
+            { value: "DEADLINE_PASSED", label: "Deadline Passed" },
+            { value: "INACTIVE", label: "Inactive" },
+          ]}
+          value={filterStatus}
+          onChange={setFilterStatus}
+        />
+      </Group>
+
+      {filteredPostings.length > 0 ? (
         <>
           <Grid gutter="lg">
             {paged.map((p) => (
@@ -553,10 +626,10 @@ export default function JobPostings({ role }) {
               </Grid.Col>
             ))}
           </Grid>
-          {postings.length > perPage && (
+          {filteredPostings.length > perPage && (
             <Group justify="center" mt="lg">
               <Pagination
-                total={Math.ceil(postings.length / perPage)}
+                total={Math.ceil(filteredPostings.length / perPage)}
                 value={page}
                 onChange={setPage}
               />
@@ -565,7 +638,7 @@ export default function JobPostings({ role }) {
         </>
       ) : (
         <Text c="dimmed" ta="center" py="xl">
-          No job postings available.
+          No job postings match your filters.
         </Text>
       )}
 

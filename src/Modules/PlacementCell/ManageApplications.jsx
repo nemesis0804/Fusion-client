@@ -13,12 +13,15 @@ import {
   Textarea,
   Checkbox,
   Card,
+  TextInput,
+  NumberInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { apiGet, apiPost } from "./api.js";
 import {
   jobApplicationsRoute,
   jobPostingsRoute,
+  jobOffersRoute,
 } from "../../routes/placementCellRoutes/index.jsx";
 
 const STATUS_CHOICES = [
@@ -52,6 +55,14 @@ export default function ManageApplications() {
   const [statusModal, setStatusModal] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [remarks, setRemarks] = useState("");
+
+  const [extendOfferModal, setExtendOfferModal] = useState(null);
+  const [offerData, setOfferData] = useState({
+    ctc_offered: 0,
+    designation_offered: "",
+    response_deadline: "",
+    joining_date: "",
+  });
 
   useEffect(() => {
     const fetchPostings = async () => {
@@ -120,6 +131,52 @@ export default function ManageApplications() {
       notifications.show({
         title: "Error",
         message: "Failed to update",
+        color: "red",
+      });
+    }
+  };
+
+  const handleExtendOffer = async () => {
+    if (!extendOfferModal) return;
+    if (!offerData.response_deadline || !offerData.ctc_offered) {
+      notifications.show({
+        title: "Validation Error",
+        message: "Response deadline and CTC offered are required",
+        color: "red",
+      });
+      return;
+    }
+    
+    try {
+      await apiPost(jobOffersRoute, {
+        application: extendOfferModal.id,
+        ...offerData,
+      });
+      
+      // Update app status to "OFFER_EXTENDED" simultaneously
+      await apiPost(`${jobApplicationsRoute}${extendOfferModal.id}/update_status/`, {
+        status: "OFFER_EXTENDED",
+        remarks: "Offer has been extended to the student.",
+      });
+
+      notifications.show({
+        title: "Success",
+        message: "Offer extended successfully",
+        color: "green",
+      });
+      
+      setExtendOfferModal(null);
+      setOfferData({
+        ctc_offered: 0,
+        designation_offered: "",
+        response_deadline: "",
+        joining_date: "",
+      });
+      fetchApplications(selected.id);
+    } catch (err) {
+      notifications.show({
+        title: "Error",
+        message: err.response?.data?.detail || err.response?.data?.join(" ") || "Failed to extend offer",
         color: "red",
       });
     }
