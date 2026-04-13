@@ -146,25 +146,28 @@ export default function ManageApplications() {
       });
       return;
     }
-    
+
     try {
       await apiPost(jobOffersRoute, {
         application: extendOfferModal.id,
         ...offerData,
       });
-      
+
       // Update app status to "OFFER_EXTENDED" simultaneously
-      await apiPost(`${jobApplicationsRoute}${extendOfferModal.id}/update_status/`, {
-        status: "OFFER_EXTENDED",
-        remarks: "Offer has been extended to the student.",
-      });
+      await apiPost(
+        `${jobApplicationsRoute}${extendOfferModal.id}/update_status/`,
+        {
+          status: "OFFER_EXTENDED",
+          remarks: "Offer has been extended to the student.",
+        },
+      );
 
       notifications.show({
         title: "Success",
         message: "Offer extended successfully",
         color: "green",
       });
-      
+
       setExtendOfferModal(null);
       setOfferData({
         ctc_offered: 0,
@@ -176,7 +179,10 @@ export default function ManageApplications() {
     } catch (err) {
       notifications.show({
         title: "Error",
-        message: err.response?.data?.detail || err.response?.data?.join(" ") || "Failed to extend offer",
+        message:
+          err.response?.data?.detail ||
+          err.response?.data?.join(" ") ||
+          "Failed to extend offer",
         color: "red",
       });
     }
@@ -325,16 +331,35 @@ export default function ManageApplications() {
                     {new Date(app.applied_at).toLocaleDateString("en-IN")}
                   </Table.Td>
                   <Table.Td>
-                    <Button
-                      size="xs"
-                      variant="light"
-                      onClick={() => {
-                        setStatusModal(app);
-                        setNewStatus(app.status);
-                      }}
-                    >
-                      Update
-                    </Button>
+                    <Group gap="xs">
+                      <Button
+                        size="xs"
+                        variant="light"
+                        onClick={() => {
+                          setStatusModal(app);
+                          setNewStatus(app.status);
+                        }}
+                      >
+                        Update
+                      </Button>
+                      {(app.status === "SHORTLISTED" ||
+                        app.status === "INTERVIEW_SCHEDULED") && (
+                        <Button
+                          size="xs"
+                          color="violet"
+                          variant="light"
+                          onClick={() => {
+                            setExtendOfferModal(app);
+                            setOfferData({
+                              ...offerData,
+                              ctc_offered: selected.ctc || 0,
+                            });
+                          }}
+                        >
+                          Extend Offer
+                        </Button>
+                      )}
+                    </Group>
                   </Table.Td>
                 </Table.Tr>
               ))}
@@ -374,6 +399,78 @@ export default function ManageApplications() {
           />
           <Button onClick={handleUpdateStatus} fullWidth>
             Update
+          </Button>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={!!extendOfferModal}
+        onClose={() => setExtendOfferModal(null)}
+        title="Extend Job Offer"
+        centered
+        size="md"
+      >
+        <Stack>
+          <Text size="sm" c="dimmed">
+            Extending offer to{" "}
+            <Text span fw={600} c="dark">
+              {extendOfferModal?.student_name}
+            </Text>{" "}
+            for{" "}
+            <Text span fw={600} c="dark">
+              {selected?.title}
+            </Text>
+          </Text>
+
+          <Group grow>
+            <NumberInput
+              label="CTC Offered (LPA)"
+              required
+              value={offerData.ctc_offered}
+              onChange={(val) =>
+                setOfferData({ ...offerData, ctc_offered: val })
+              }
+              min={0}
+              decimalScale={2}
+            />
+            <TextInput
+              label="Designation Offered"
+              placeholder="e.g. SDE-1"
+              value={offerData.designation_offered}
+              onChange={(e) =>
+                setOfferData({
+                  ...offerData,
+                  designation_offered: e.target.value,
+                })
+              }
+            />
+          </Group>
+
+          <Group grow>
+            <TextInput
+              label="Response Deadline"
+              required
+              type="datetime-local"
+              value={offerData.response_deadline}
+              onChange={(e) =>
+                setOfferData({
+                  ...offerData,
+                  response_deadline: e.target.value,
+                })
+              }
+            />
+            <TextInput
+              label="Joining Date"
+              type="date"
+              value={offerData.joining_date}
+              onChange={(e) =>
+                setOfferData({ ...offerData, joining_date: e.target.value })
+              }
+            />
+          </Group>
+
+          <Button onClick={handleExtendOffer} fullWidth color="violet" mt="sm">
+            Confirm & Extend Offer
           </Button>
         </Stack>
       </Modal>
