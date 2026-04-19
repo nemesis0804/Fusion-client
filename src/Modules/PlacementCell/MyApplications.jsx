@@ -1,11 +1,22 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from "react";
-import { Text, Table, Badge, Group, Loader, Card, Button } from "@mantine/core";
+import {
+  Text,
+  Table,
+  Badge,
+  Group,
+  Loader,
+  Card,
+  Button,
+  Modal,
+  Textarea,
+} from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet, apiDelete } from "./api.js";
+import { apiGet, apiDelete, apiPost } from "./api.js";
 import {
   mySummaryRoute,
   jobApplicationsRoute,
+  appealsRoute,
 } from "../../routes/placementCellRoutes/index.jsx";
 
 const STATUS_COLORS = {
@@ -44,6 +55,8 @@ function StatMini({ label, value, color }) {
 export default function MyApplications() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [appealModal, setAppealModal] = useState(null);
+  const [appealReason, setAppealReason] = useState("");
 
   const fetchData = async () => {
     try {
@@ -57,6 +70,37 @@ export default function MyApplications() {
       });
     }
     setLoading(false);
+  };
+
+  const handleAppealSubmit = async () => {
+    if (!appealReason.trim()) {
+      notifications.show({
+        title: "Error",
+        message: "Please provide a reason",
+        color: "red",
+      });
+      return;
+    }
+    try {
+      await apiPost(appealsRoute, {
+        application: appealModal,
+        reason: appealReason,
+      });
+      notifications.show({
+        title: "Success",
+        message: "Appeal submitted successfully",
+        color: "green",
+      });
+      setAppealModal(null);
+      setAppealReason("");
+      fetchData(); // Refresh to catch any state changes
+    } catch {
+      notifications.show({
+        title: "Error",
+        message: "Failed to submit appeal",
+        color: "red",
+      });
+    }
   };
 
   useEffect(() => {
@@ -169,6 +213,15 @@ export default function MyApplications() {
                     >
                       Withdraw
                     </Button>
+                  ) : app.status === "REJECTED" ? (
+                    <Button
+                      size="xs"
+                      color="orange"
+                      variant="light"
+                      onClick={() => setAppealModal(app.id)}
+                    >
+                      Appeal
+                    </Button>
                   ) : (
                     <Text size="xs" c="dimmed">
                       N/A
@@ -187,6 +240,24 @@ export default function MyApplications() {
           <Button variant="light">Browse Job Postings</Button>
         </Card>
       )}
+
+      <Modal
+        opened={!!appealModal}
+        onClose={() => setAppealModal(null)}
+        title="Submit Appeal against Rejection"
+      >
+        <Textarea
+          label="Appeal Reason"
+          placeholder="Explain why you are appealing this rejection..."
+          value={appealReason}
+          onChange={(e) => setAppealReason(e.currentTarget.value)}
+          minRows={4}
+          mb="md"
+        />
+        <Button onClick={handleAppealSubmit} fullWidth>
+          Submit Appeal
+        </Button>
+      </Modal>
     </div>
   );
 }

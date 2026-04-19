@@ -63,3 +63,19 @@ export const announcementsRoute = `${host}/placement/api/announcements/`;
 
 // PCMS Dashboard / Reports
 export const mySummaryRoute = `${host}/placement/api/my-summary/`;
+
+// Appeals
+export const appealsRoute = `${host}/placement/api/appeals/`;
+
+// Placement Profile
+export const placementProfileRoute = `${host}/placement/api/placement-profile/`;
+
+// Alumni Network
+export const alumniRoute = `${host}/placement/api/alumni/`;
+export const mentorshipRoute = `${host}/placement/api/mentorship/`;
+export const mentorshipSessionsRoute = `${host}/placement/api/mentorship-sessions/`;
+export const jobReferralsRoute = `${host}/placement/api/job-referrals/`;
+
+// Interviews
+export const interviewsRoute = `${host}/placement/api/interviews/`;
+export const interviewConflictsRoute = `${host}/placement/api/interviews/check-conflicts/`;

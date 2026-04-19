@@ -20,7 +20,7 @@ import {
   Switch,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet, apiPost } from "./api.js";
+import { apiGet, apiPost, apiPatch } from "./api.js";
 import {
   jobPostingsRoute,
   companiesRoute,
@@ -115,10 +115,11 @@ function JobCard({ posting, onViewDetail }) {
   );
 }
 
-function JobDetailModal({ posting, opened, onClose, role }) {
+function JobDetailModal({ posting, opened, onClose, role, onJobUpdate }) {
   const [eligibility, setEligibility] = useState(null);
   const [checkingEligibility, setCheckingEligibility] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   const checkEligibility = async () => {
     setCheckingEligibility(true);
@@ -154,6 +155,30 @@ function JobDetailModal({ posting, opened, onClose, role }) {
       notifications.show({ title: "Error", message: msg, color: "red" });
     }
     setApplying(false);
+  };
+
+  const handleToggleStatus = async () => {
+    setUpdating(true);
+    try {
+      const newStatus = !posting.is_active;
+      await apiPatch(`${jobPostingsRoute}${posting.id}/`, {
+        is_active: newStatus,
+      });
+      notifications.show({
+        title: "Success",
+        message: `Job posting marked as ${newStatus ? "Active" : "Closed"}`,
+        color: "green",
+      });
+      if (onJobUpdate) onJobUpdate();
+      onClose();
+    } catch (err) {
+      notifications.show({
+        title: "Error",
+        message: err.response?.data?.detail || "Failed to update status",
+        color: "red",
+      });
+    }
+    setUpdating(false);
   };
 
   useEffect(() => {
@@ -302,6 +327,18 @@ function JobDetailModal({ posting, opened, onClose, role }) {
             )
           ) : null}
         </>
+      )}
+
+      {(role === "placement officer" || role === "placement chairman") && (
+        <Group mt="xl" justify="flex-end">
+          <Button
+            color={posting.is_active ? "red" : "green"}
+            onClick={handleToggleStatus}
+            loading={updating}
+          >
+            {posting.is_active ? "Close Job Posting" : "Re-open Job Posting"}
+          </Button>
+        </Group>
       )}
     </Modal>
   );
@@ -650,6 +687,7 @@ export default function JobPostings({ role }) {
           setSelectedPosting(null);
         }}
         role={role}
+        onJobUpdate={fetchData}
       />
 
       <CreateJobModal

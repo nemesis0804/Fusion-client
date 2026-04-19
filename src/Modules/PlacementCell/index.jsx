@@ -21,6 +21,7 @@ const JobPostings = lazy(() => import("./JobPostings.jsx"));
 const MyApplications = lazy(() => import("./MyApplications.jsx"));
 const MyOffers = lazy(() => import("./MyOffers.jsx"));
 const ManageApplications = lazy(() => import("./ManageApplications.jsx"));
+const Appeals = lazy(() => import("./Appeals.jsx"));
 const Announcements = lazy(() => import("./Announcements.jsx"));
 const Reports = lazy(() => import("./Reports.jsx"));
 const PlacementSchedule = lazy(() => import("./PlacementSchedule.jsx"));
@@ -29,6 +30,12 @@ const DebarredStudents = lazy(() => import("./DebarredStudents.jsx"));
 const PlacementCalendar = lazy(() => import("./PlacementCalendar.jsx"));
 const StudentRecords = lazy(() => import("./StudentRecords.jsx"));
 const ManagementTab = lazy(() => import("./ManagementTab.jsx"));
+const PlacementProfile = lazy(() => import("./PlacementProfile.jsx"));
+const AlumniRegistration = lazy(() => import("./AlumniRegistration.jsx"));
+const AlumniDirectory = lazy(() => import("./AlumniDirectory.jsx"));
+const MentorshipHub = lazy(() => import("./MentorshipHub.jsx"));
+const JobReferrals = lazy(() => import("./JobReferrals.jsx"));
+const InterviewManagement = lazy(() => import("./InterviewManagement.jsx"));
 
 // Tab configurations per role
 const TAB_CONFIGS = {
@@ -37,33 +44,55 @@ const TAB_CONFIGS = {
     { title: "Job Postings" },
     { title: "Companies" },
     { title: "Applications" },
+    { title: "Appeals" },
     { title: "Announcements" },
     { title: "Reports" },
     { title: "Schedule" },
     { title: "Student Records" },
     { title: "Statistics" },
     { title: "Debarred Students" },
+    { title: "Alumni" },
+    { title: "Job Referrals" },
+    { title: "Interviews" },
   ],
   "placement chairman": [
     { title: "Dashboard" },
     { title: "Job Postings" },
     { title: "Companies" },
     { title: "Applications" },
+    { title: "Appeals" },
     { title: "Announcements" },
     { title: "Reports" },
     { title: "Schedule" },
     { title: "Student Records" },
     { title: "Statistics" },
     { title: "Debarred Students" },
+    { title: "Alumni" },
+    { title: "Job Referrals" },
+    { title: "Interviews" },
   ],
   student: [
     { title: "Dashboard" },
+    { title: "My Profile" },
     { title: "Job Postings" },
     { title: "My Applications" },
     { title: "My Offers" },
+    { title: "Appeals" },
     { title: "Announcements" },
     { title: "Schedule" },
     { title: "Calendar" },
+    { title: "Alumni Network" },
+    { title: "Mentors" },
+    { title: "Job Referrals" },
+    { title: "My Interviews" },
+    { title: "Statistics" },
+  ],
+  alumni: [
+    { title: "Dashboard" },
+    { title: "Alumni Registration" },
+    { title: "Mentorship" },
+    { title: "Job Referrals" },
+    { title: "Announcements" },
   ],
   default: [
     { title: "Dashboard" },
@@ -71,6 +100,7 @@ const TAB_CONFIGS = {
     { title: "Announcements" },
     { title: "Schedule" },
     { title: "Calendar" },
+    { title: "Alumni Registration" },
   ],
 };
 
@@ -135,6 +165,8 @@ export default function PlacementCell() {
     switch (tabTitle) {
       case "Dashboard":
         return <Dashboard role={placementRole} onTabChange={navigateToTab} />;
+      case "My Profile":
+        return <PlacementProfile role={placementRole} />;
       case "Job Postings":
         return <JobPostings role={placementRole} />;
       case "My Applications":
@@ -143,12 +175,17 @@ export default function PlacementCell() {
         return <MyOffers />;
       case "Applications":
         return <ManageApplications />;
+      case "Appeals":
+        return <Appeals role={placementRole} />;
       case "Companies":
         return <ManagementTab role={placementRole} />;
       case "Announcements":
         return <Announcements role={placementRole} />;
       case "Reports":
         return <Reports />;
+      case "Interviews":
+      case "My Interviews":
+        return <InterviewManagement role={placementRole} />;
       case "Schedule":
         return <PlacementSchedule role={placementRole} />;
       case "Student Records":
@@ -159,6 +196,16 @@ export default function PlacementCell() {
         return <PlacementCalendar role={placementRole} />;
       case "Debarred Students":
         return <DebarredStudents role={placementRole} />;
+      case "Alumni":
+      case "Alumni Network":
+        return <AlumniDirectory role={placementRole} />;
+      case "Alumni Registration":
+        return <AlumniRegistration />;
+      case "Mentors":
+      case "Mentorship":
+        return <MentorshipHub role={placementRole} />;
+      case "Job Referrals":
+        return <JobReferrals role={placementRole} />;
       default:
         return <Loader />;
     }

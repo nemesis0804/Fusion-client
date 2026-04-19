@@ -32,6 +32,11 @@ export const apiPut = async (url, data) => {
   return response.data;
 };
 
+export const apiPatch = async (url, data) => {
+  const response = await axios.patch(url, data, { headers: getAuthHeaders() });
+  return response.data;
+};
+
 export const apiDelete = async (url, data = {}) => {
   const response = await axios.delete(url, {
     headers: getAuthHeaders(),
