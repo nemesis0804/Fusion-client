@@ -7,6 +7,9 @@ export const placementScheduleDetailRoute = `${host}/placement/api/placement/`;
 // Roles
 export const userRolesRoute = `${host}/placement/api/roles/`;
 
+// Eligibility options (programmes / branches / batches)
+export const eligibilityOptionsRoute = `${host}/placement/api/eligibility-options/`;
+
 // Student Records & CV
 export const studentRecordsRoute = `${host}/placement/api/student-records/`;
 export const cvDataRoute = `${host}/placement/api/cv/`;
@@ -60,6 +63,7 @@ export const jobPostingsRoute = `${host}/placement/api/job-postings/`;
 export const jobApplicationsRoute = `${host}/placement/api/job-applications/`;
 export const jobOffersRoute = `${host}/placement/api/job-offers/`;
 export const announcementsRoute = `${host}/placement/api/announcements/`;
+export const studentResumesRoute = `${host}/placement/api/student-resumes/`;
 
 // PCMS Dashboard / Reports
 export const mySummaryRoute = `${host}/placement/api/my-summary/`;
@@ -69,6 +73,9 @@ export const appealsRoute = `${host}/placement/api/appeals/`;
 
 // Placement Profile
 export const placementProfileRoute = `${host}/placement/api/placement-profile/`;
+
+// Placement Status (TPO-managed verified placement / internship claims)
+export const placementClaimsRoute = `${host}/placement/api/placement-claims/`;
 
 // Alumni Network
 export const alumniRoute = `${host}/placement/api/alumni/`;

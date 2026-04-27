@@ -1,37 +1,67 @@
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Text,
   Group,
   Loader,
   Button,
   TextInput,
+  Textarea,
   Table,
   Modal,
   Stack,
-  Card,
-  Grid,
+  Badge,
+  ActionIcon,
+  Tooltip,
+  Box,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { apiGet, apiPost } from "./api.js";
 import {
-  registrationRoute,
-  restrictionsRoute,
-  addFieldRoute,
-} from "../../routes/placementCellRoutes/index.jsx";
+  IconRefresh,
+  IconSearch,
+  IconPencil,
+  IconTrash,
+  IconExternalLink,
+} from "@tabler/icons-react";
+import { apiGet, apiPost, apiPut, apiDelete } from "./api.js";
+import { companiesRoute } from "../../routes/placementCellRoutes/index.jsx";
 
-function CompanyRegistration({ role }) {
+const blankCompany = {
+  name: "",
+  website: "",
+  description: "",
+  domain: "",
+  contact_person_name: "",
+  contact_email: "",
+  contact_phone: "",
+  address: "",
+};
+
+export default function ManagementTab({ role }) {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newCompany, setNewCompany] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [search, setSearch] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [formData, setFormData] = useState(blankCompany);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isOfficer =
+    role === "placement officer" || role === "placement chairman";
 
   const fetchCompanies = async () => {
+    setLoading(true);
     try {
-      const res = await apiGet(registrationRoute);
-      setCompanies(Array.isArray(res) ? res : []);
+      const res = await apiGet(companiesRoute);
+      const list = Array.isArray(res) ? res : res.results || [];
+      setCompanies(list);
     } catch {
-      /* ignore */
+      notifications.show({
+        title: "Error",
+        message: "Failed to load companies",
+        color: "red",
+      });
+      setCompanies([]);
     }
     setLoading(false);
   };
@@ -40,312 +70,407 @@ function CompanyRegistration({ role }) {
     fetchCompanies();
   }, []);
 
-  const handleAdd = async () => {
-    if (!newCompany.trim()) return;
-    setAdding(true);
-    try {
-      await apiPost(registrationRoute, { company_name: newCompany });
+  const openCreate = () => {
+    setEditing(null);
+    setFormData(blankCompany);
+    setModalOpen(true);
+  };
+
+  const openEdit = (company) => {
+    setEditing(company);
+    setFormData({
+      name: company.name || "",
+      website: company.website || "",
+      description: company.description || "",
+      domain: company.domain || "",
+      contact_person_name: company.contact_person_name || "",
+      contact_email: company.contact_email || "",
+      contact_phone: company.contact_phone || "",
+      address: company.address || "",
+    });
+    setModalOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim() || !formData.contact_email.trim()) {
       notifications.show({
-        title: "Success",
-        message: "Company registered",
-        color: "green",
+        title: "Missing fields",
+        message: "Company name and contact email are required.",
+        color: "red",
       });
-      setNewCompany("");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const payload = {
+        name: formData.name.trim(),
+        website: formData.website.trim() || null,
+        description: formData.description.trim() || null,
+        domain: formData.domain.trim() || null,
+        contact_person_name: formData.contact_person_name.trim() || null,
+        contact_email: formData.contact_email.trim(),
+        contact_phone: formData.contact_phone.trim() || null,
+        address: formData.address.trim() || null,
+      };
+      if (editing) {
+        await apiPut(`${companiesRoute}${editing.id}/`, payload);
+        notifications.show({
+          title: "Updated",
+          message: "Company details updated.",
+          color: "green",
+        });
+      } else {
+        await apiPost(companiesRoute, payload);
+        notifications.show({
+          title: "Registered",
+          message: "Company registered.",
+          color: "green",
+        });
+      }
+      setModalOpen(false);
+      setEditing(null);
+      setFormData(blankCompany);
+      fetchCompanies();
+    } catch (err) {
+      const data = err?.response?.data;
+      let msg = "Failed to save company.";
+      if (data && typeof data === "object") {
+        const parts = [];
+        Object.entries(data).forEach(([field, val]) => {
+          parts.push(
+            `${field}: ${Array.isArray(val) ? val.join(", ") : String(val)}`,
+          );
+        });
+        if (parts.length) msg = parts.join(" | ");
+      }
+      notifications.show({ title: "Error", message: msg, color: "red" });
+    }
+    setSubmitting(false);
+  };
+
+  const handleDelete = async (company) => {
+    if (!window.confirm(`Remove "${company.name}" from the registry?`)) return;
+    try {
+      await apiDelete(`${companiesRoute}${company.id}/`);
+      notifications.show({
+        title: "Removed",
+        message: "Company removed.",
+        color: "orange",
+      });
       fetchCompanies();
     } catch {
       notifications.show({
         title: "Error",
-        message: "Failed to register company",
+        message: "Failed to remove company.",
         color: "red",
       });
     }
-    setAdding(false);
   };
 
-  const isOfficer =
-    role === "placement officer" || role === "placement chairman";
-
-  if (loading)
-    return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
-        <Loader />
-      </div>
-    );
-
-  return (
-    <div>
-      <Text fw={600} size="lg" mb="sm">
-        Registered Companies
-      </Text>
-
-      {isOfficer && (
-        <Group mb="md">
-          <TextInput
-            placeholder="Company name"
-            value={newCompany}
-            onChange={(e) => setNewCompany(e.target.value)}
-            w={300}
-          />
-          <Button onClick={handleAdd} loading={adding}>
-            Register
-          </Button>
-        </Group>
-      )}
-
-      {companies.length > 0 ? (
-        <Table striped highlightOnHover withTableBorder>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>#</Table.Th>
-              <Table.Th>Company Name</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {companies.map((c, i) => (
-              <Table.Tr key={c.id || i}>
-                <Table.Td>{i + 1}</Table.Td>
-                <Table.Td>{c.company_name}</Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      ) : (
-        <Text c="dimmed" ta="center" py="md">
-          No registered companies.
-        </Text>
-      )}
-    </div>
-  );
-}
-
-function Restrictions({ role }) {
-  const [policies, setPolicies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    max_offers: 1,
-    min_cpi: 0,
-    backlog_allowed: true,
-  });
-
-  const fetchPolicies = async () => {
+  const handleApprove = async (company) => {
     try {
-      const res = await apiGet(restrictionsRoute);
-      setPolicies(Array.isArray(res) ? res : []);
-    } catch {
-      /* ignore */
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchPolicies();
-  }, []);
-
-  const handleAdd = async () => {
-    try {
-      await apiPost(restrictionsRoute, formData);
+      await apiPost(`${companiesRoute}${company.id}/approve/`, {});
       notifications.show({
-        title: "Success",
-        message: "Policy added",
+        title: "Approved",
+        message: `${company.name} approved.`,
         color: "green",
       });
-      setModalOpen(false);
-      fetchPolicies();
+      fetchCompanies();
     } catch {
       notifications.show({
         title: "Error",
-        message: "Failed to add policy",
+        message: "Failed to approve.",
         color: "red",
       });
     }
   };
 
-  const isOfficer =
-    role === "placement officer" || role === "placement chairman";
+  const handleReject = async (company) => {
+    try {
+      await apiPost(`${companiesRoute}${company.id}/reject/`, {});
+      notifications.show({
+        title: "Rejected",
+        message: `${company.name} rejected.`,
+        color: "orange",
+      });
+      fetchCompanies();
+    } catch {
+      notifications.show({
+        title: "Error",
+        message: "Failed to reject.",
+        color: "red",
+      });
+    }
+  };
 
-  if (loading)
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return companies;
+    return companies.filter((c) =>
+      `${c.name || ""} ${c.domain || ""} ${c.contact_email || ""}`
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [companies, search]);
+
+  if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
+      <div style={{ textAlign: "center", padding: "3rem" }}>
         <Loader />
       </div>
     );
+  }
 
   return (
     <div>
-      <Group justify="space-between" mb="sm">
-        <Text fw={600} size="lg">
-          Placement Policies & Restrictions
-        </Text>
-        {isOfficer && (
-          <Button onClick={() => setModalOpen(true)} size="sm">
-            + Add Policy
-          </Button>
-        )}
+      <Group justify="space-between" mb="lg" wrap="wrap">
+        <Stack gap={2}>
+          <Text fw={700} size="xl">
+            Companies
+          </Text>
+          <Text size="sm" c="dimmed">
+            Register and manage recruiting companies for placement.
+          </Text>
+        </Stack>
+        <Group gap="sm">
+          <Tooltip label="Reload">
+            <ActionIcon variant="light" onClick={fetchCompanies}>
+              <IconRefresh size={16} />
+            </ActionIcon>
+          </Tooltip>
+          {isOfficer && (
+            <Button onClick={openCreate}>+ Register Company</Button>
+          )}
+        </Group>
       </Group>
 
-      {policies.length > 0 ? (
-        <Grid gutter="lg">
-          {policies.map((p) => (
-            <Grid.Col key={p.id} span={{ base: 12, sm: 6 }}>
-              <Card shadow="xs" padding="md" radius="md" withBorder>
-                <Text fw={500}>{p.name}</Text>
-                <Text size="sm" c="dimmed" mt={4}>
-                  {p.description}
-                </Text>
-                <Group mt="sm" gap="md">
-                  <Text size="xs">
-                    Max Offers: <strong>{p.max_offers}</strong>
-                  </Text>
-                  <Text size="xs">
-                    Min CPI: <strong>{p.min_cpi}</strong>
-                  </Text>
-                  <Text size="xs">
-                    Active: <strong>{p.is_active ? "Yes" : "No"}</strong>
-                  </Text>
-                </Group>
-              </Card>
-            </Grid.Col>
-          ))}
-        </Grid>
-      ) : (
-        <Text c="dimmed" ta="center" py="md">
-          No policies configured.
+      <Group mb="md">
+        <TextInput
+          placeholder="Search by name, domain, or email"
+          leftSection={<IconSearch size={14} />}
+          value={search}
+          onChange={(e) => setSearch(e.currentTarget.value)}
+          w={320}
+        />
+      </Group>
+
+      {filtered.length === 0 ? (
+        <Text c="dimmed" ta="center" py="xl">
+          No companies registered yet.
         </Text>
+      ) : (
+        <Box style={{ overflowX: "auto" }}>
+          <Table striped highlightOnHover withTableBorder>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Name</Table.Th>
+                <Table.Th>Domain</Table.Th>
+                <Table.Th>Contact</Table.Th>
+                <Table.Th>Description</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th>Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {filtered.map((c) => (
+                <Table.Tr key={c.id}>
+                  <Table.Td>
+                    <Group gap={6} wrap="nowrap">
+                      <Text fw={600} size="sm">
+                        {c.name}
+                      </Text>
+                      {c.website && (
+                        <Tooltip label={c.website}>
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            component="a"
+                            href={c.website}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <IconExternalLink size={12} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                    </Group>
+                  </Table.Td>
+                  <Table.Td>{c.domain || "—"}</Table.Td>
+                  <Table.Td>
+                    <Stack gap={0}>
+                      <Text size="sm">{c.contact_person_name || "—"}</Text>
+                      <Text size="xs" c="dimmed">
+                        {c.contact_email}
+                      </Text>
+                      {c.contact_phone && (
+                        <Text size="xs" c="dimmed">
+                          {c.contact_phone}
+                        </Text>
+                      )}
+                    </Stack>
+                  </Table.Td>
+                  <Table.Td style={{ maxWidth: 280 }}>
+                    <Text size="sm" lineClamp={2}>
+                      {c.description || "—"}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge
+                      size="sm"
+                      color={
+                        c.approval_status === "APPROVED"
+                          ? "green"
+                          : c.approval_status === "REJECTED"
+                            ? "red"
+                            : "yellow"
+                      }
+                      variant="light"
+                    >
+                      {c.approval_status || "PENDING"}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    {isOfficer && (
+                      <Group gap={4} wrap="nowrap">
+                        <Tooltip label="Edit">
+                          <ActionIcon
+                            variant="subtle"
+                            size="sm"
+                            onClick={() => openEdit(c)}
+                          >
+                            <IconPencil size={14} />
+                          </ActionIcon>
+                        </Tooltip>
+                        {c.approval_status !== "APPROVED" && (
+                          <Button
+                            size="xs"
+                            variant="light"
+                            color="green"
+                            onClick={() => handleApprove(c)}
+                          >
+                            Approve
+                          </Button>
+                        )}
+                        {c.approval_status !== "REJECTED" && (
+                          <Button
+                            size="xs"
+                            variant="light"
+                            color="gray"
+                            onClick={() => handleReject(c)}
+                          >
+                            Reject
+                          </Button>
+                        )}
+                        <Tooltip label="Remove">
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleDelete(c)}
+                          >
+                            <IconTrash size={14} />
+                          </ActionIcon>
+                        </Tooltip>
+                      </Group>
+                    )}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Box>
       )}
 
       <Modal
         opened={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="Add Policy"
+        onClose={() => {
+          setModalOpen(false);
+          setEditing(null);
+        }}
+        title={editing ? "Edit Company" : "Register Company"}
         centered
+        size="lg"
       >
         <Stack>
           <TextInput
-            label="Policy Name"
+            label="Name"
             required
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
-          <TextInput
-            label="Description"
-            value={formData.description}
             onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
+              setFormData((f) => ({ ...f, name: e.target.value }))
             }
           />
-          <Button onClick={handleAdd} fullWidth>
-            Add Policy
+          <Group grow>
+            <TextInput
+              label="Domain"
+              placeholder="e.g. IT, Finance, Manufacturing"
+              value={formData.domain}
+              onChange={(e) =>
+                setFormData((f) => ({ ...f, domain: e.target.value }))
+              }
+            />
+            <TextInput
+              label="Website"
+              placeholder="https://..."
+              value={formData.website}
+              onChange={(e) =>
+                setFormData((f) => ({ ...f, website: e.target.value }))
+              }
+            />
+          </Group>
+          <Textarea
+            label="Description"
+            placeholder="A short description of the company"
+            autosize
+            minRows={3}
+            maxRows={6}
+            value={formData.description}
+            onChange={(e) =>
+              setFormData((f) => ({ ...f, description: e.target.value }))
+            }
+          />
+          <Group grow>
+            <TextInput
+              label="Contact Person"
+              value={formData.contact_person_name}
+              onChange={(e) =>
+                setFormData((f) => ({
+                  ...f,
+                  contact_person_name: e.target.value,
+                }))
+              }
+            />
+            <TextInput
+              label="Contact Email"
+              required
+              type="email"
+              value={formData.contact_email}
+              onChange={(e) =>
+                setFormData((f) => ({ ...f, contact_email: e.target.value }))
+              }
+            />
+          </Group>
+          <Group grow>
+            <TextInput
+              label="Contact Phone"
+              value={formData.contact_phone}
+              onChange={(e) =>
+                setFormData((f) => ({ ...f, contact_phone: e.target.value }))
+              }
+            />
+            <TextInput
+              label="Address"
+              value={formData.address}
+              onChange={(e) =>
+                setFormData((f) => ({ ...f, address: e.target.value }))
+              }
+            />
+          </Group>
+          <Button onClick={handleSubmit} loading={submitting} fullWidth>
+            {editing ? "Save changes" : "Register"}
           </Button>
         </Stack>
       </Modal>
-    </div>
-  );
-}
-
-function FormFields({ role }) {
-  const [fields, setFields] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [newRole, setNewRole] = useState("");
-  const [adding, setAdding] = useState(false);
-
-  const fetchFields = async () => {
-    try {
-      const res = await apiGet(addFieldRoute);
-      setFields(Array.isArray(res) ? res : []);
-    } catch {
-      /* ignore */
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchFields();
-  }, []);
-
-  const handleAdd = async () => {
-    if (!newRole.trim()) return;
-    setAdding(true);
-    try {
-      await apiPost(addFieldRoute, { role: newRole });
-      notifications.show({
-        title: "Success",
-        message: "Role added",
-        color: "green",
-      });
-      setNewRole("");
-      fetchFields();
-    } catch {
-      notifications.show({
-        title: "Error",
-        message: "Failed to add role",
-        color: "red",
-      });
-    }
-    setAdding(false);
-  };
-
-  const isOfficer =
-    role === "placement officer" || role === "placement chairman";
-
-  if (loading)
-    return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
-        <Loader />
-      </div>
-    );
-
-  return (
-    <div>
-      <Text fw={600} size="lg" mb="sm">
-        Roles / Fields
-      </Text>
-
-      {isOfficer && (
-        <Group mb="md">
-          <TextInput
-            placeholder="Role name"
-            value={newRole}
-            onChange={(e) => setNewRole(e.target.value)}
-            w={250}
-          />
-          <Button onClick={handleAdd} loading={adding}>
-            Add Role
-          </Button>
-        </Group>
-      )}
-
-      {fields.length > 0 ? (
-        <Group gap="sm">
-          {fields.map((f) => (
-            <Card key={f.id} shadow="xs" padding="sm" radius="md" withBorder>
-              {f.role}
-            </Card>
-          ))}
-        </Group>
-      ) : (
-        <Text c="dimmed" ta="center" py="md">
-          No roles configured.
-        </Text>
-      )}
-    </div>
-  );
-}
-
-export default function ManagementTab({ role }) {
-  return (
-    <div>
-      <Text fw={600} size="xl" mb="lg">
-        Management
-      </Text>
-
-      <Stack gap="xl">
-        <CompanyRegistration role={role} />
-        <Restrictions role={role} />
-        <FormFields role={role} />
-      </Stack>
     </div>
   );
 }

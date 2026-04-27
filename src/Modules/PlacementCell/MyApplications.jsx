@@ -10,6 +10,8 @@ import {
   Button,
   Modal,
   Textarea,
+  Anchor,
+  Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { apiGet, apiDelete, apiPost } from "./api.js";
@@ -37,6 +39,52 @@ const STATUS_LABELS = {
   OFFER_ACCEPTED: "Accepted",
   OFFER_REJECTED: "Offer Rejected",
   REJECTED: "Rejected",
+};
+
+/**
+ * Format a compensation amount according to the provided compensation type.
+ *  - LPA              -> "₹6 LPA"
+ *  - STIPEND_PER_MONTH -> "₹40,000/month"
+ */
+const formatCompensation = (amount, compensationType = "LPA") => {
+  if (amount === null || amount === undefined || amount === "") return "—";
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return String(amount);
+  if (compensationType === "STIPEND_PER_MONTH") {
+    return `₹${n.toLocaleString("en-IN")}/month`;
+  }
+  return `₹${n} LPA`;
+};
+
+/**
+ * Pick the relevant compensation for a row, preferring (in order):
+ *   1. Accepted/extended offer's CTC
+ *   2. Role-specific CTC
+ *   3. Posting-level CTC
+ * Returns { amount, type, source } where source explains the origin.
+ */
+const pickCompensation = (app) => {
+  if (app.offer_ctc) {
+    // Offer compensation type follows the posting's interpretation.
+    return {
+      amount: app.offer_ctc,
+      type: app.posting_compensation_type || "LPA",
+      source: "offer",
+    };
+  }
+  if (app.role_ctc) {
+    return {
+      amount: app.role_ctc,
+      type:
+        app.role_compensation_type || app.posting_compensation_type || "LPA",
+      source: "role",
+    };
+  }
+  return {
+    amount: app.posting_ctc,
+    type: app.posting_compensation_type || "LPA",
+    source: "posting",
+  };
 };
 
 function StatMini({ label, value, color }) {
@@ -178,7 +226,9 @@ export default function MyApplications() {
             <Table.Tr>
               <Table.Th>Company</Table.Th>
               <Table.Th>Position</Table.Th>
-              <Table.Th>CTC (LPA)</Table.Th>
+              <Table.Th>Type</Table.Th>
+              <Table.Th>Compensation</Table.Th>
+              <Table.Th>JD</Table.Th>
               <Table.Th>Applied On</Table.Th>
               <Table.Th>Status</Table.Th>
               <Table.Th>Remarks</Table.Th>
@@ -186,50 +236,108 @@ export default function MyApplications() {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {data.applications.map((app) => (
-              <Table.Tr key={app.id}>
-                <Table.Td fw={500}>{app.company_name}</Table.Td>
-                <Table.Td>{app.job_title}</Table.Td>
-                <Table.Td>₹{app.job_posting?.ctc || "-"}</Table.Td>
-                <Table.Td>
-                  {new Date(app.applied_at).toLocaleDateString("en-IN")}
-                </Table.Td>
-                <Table.Td>
-                  <Badge
-                    color={STATUS_COLORS[app.status] || "gray"}
-                    variant="light"
-                  >
-                    {STATUS_LABELS[app.status] || app.status}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>{app.remarks || "-"}</Table.Td>
-                <Table.Td>
-                  {app.status === "APPLIED" ? (
-                    <Button
-                      size="xs"
-                      color="red"
-                      variant="light"
-                      onClick={() => handleWithdraw(app.id)}
+            {data.applications.map((app) => {
+              const comp = pickCompensation(app);
+              const compLabel = formatCompensation(comp.amount, comp.type);
+              const isInternship = app.posting_job_type === "INTERNSHIP";
+              return (
+                <Table.Tr key={app.id}>
+                  <Table.Td fw={500}>{app.company_name}</Table.Td>
+                  <Table.Td>
+                    {app.job_title}
+                    {app.role_title ? (
+                      <Text size="xs" c="dimmed">
+                        {app.role_title}
+                      </Text>
+                    ) : null}
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge size="sm" variant="light">
+                      {app.posting_job_type || "—"}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    <Tooltip
+                      label={
+                        comp.source === "offer"
+                          ? "Final offered amount"
+                          : comp.source === "role"
+                            ? "Role-specific compensation"
+                            : "Posting compensation"
+                      }
                     >
-                      Withdraw
-                    </Button>
-                  ) : app.status === "REJECTED" ? (
-                    <Button
-                      size="xs"
-                      color="orange"
+                      <span>
+                        <Text
+                          size="sm"
+                          fw={comp.source === "offer" ? 600 : 500}
+                        >
+                          {compLabel}
+                        </Text>
+                        {isInternship &&
+                          app.posting_internship_duration_months && (
+                            <Text size="xs" c="dimmed">
+                              {app.posting_internship_duration_months} mo
+                            </Text>
+                          )}
+                      </span>
+                    </Tooltip>
+                  </Table.Td>
+                  <Table.Td>
+                    {app.posting_jd_link ? (
+                      <Anchor
+                        href={app.posting_jd_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="sm"
+                      >
+                        Open ↗
+                      </Anchor>
+                    ) : (
+                      <Text size="xs" c="dimmed">
+                        —
+                      </Text>
+                    )}
+                  </Table.Td>
+                  <Table.Td>
+                    {new Date(app.applied_at).toLocaleDateString("en-IN")}
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge
+                      color={STATUS_COLORS[app.status] || "gray"}
                       variant="light"
-                      onClick={() => setAppealModal(app.id)}
                     >
-                      Appeal
-                    </Button>
-                  ) : (
-                    <Text size="xs" c="dimmed">
-                      N/A
-                    </Text>
-                  )}
-                </Table.Td>
-              </Table.Tr>
-            ))}
+                      {STATUS_LABELS[app.status] || app.status}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>{app.remarks || "-"}</Table.Td>
+                  <Table.Td>
+                    {app.status === "APPLIED" ? (
+                      <Button
+                        size="xs"
+                        color="red"
+                        variant="light"
+                        onClick={() => handleWithdraw(app.id)}
+                      >
+                        Withdraw
+                      </Button>
+                    ) : app.status === "REJECTED" ? (
+                      <Button
+                        size="xs"
+                        color="orange"
+                        variant="light"
+                        onClick={() => setAppealModal(app.id)}
+                      >
+                        Appeal
+                      </Button>
+                    ) : (
+                      <Text size="xs" c="dimmed">
+                        N/A
+                      </Text>
+                    )}
+                  </Table.Td>
+                </Table.Tr>
+              );
+            })}
           </Table.Tbody>
         </Table>
       ) : (

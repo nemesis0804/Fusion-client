@@ -44,3 +44,10 @@ export const apiDelete = async (url, data = {}) => {
   });
   return response.data;
 };
+
+export const apiPostMultipart = async (url, formData) => {
+  const headers = getAuthHeaders();
+  delete headers["Content-Type"];
+  const response = await axios.post(url, formData, { headers });
+  return response.data;
+};

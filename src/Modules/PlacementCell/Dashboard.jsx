@@ -117,7 +117,7 @@ export default function Dashboard({ onTabChange }) {
             </Grid.Col>
             <Grid.Col span={{ base: 6, md: 3 }}>
               <StatCard
-                label="Announcements"
+                label="Notices"
                 value={data.recent_announcements?.length}
                 color="purple"
               />
@@ -127,7 +127,7 @@ export default function Dashboard({ onTabChange }) {
           {data.recent_announcements?.length > 0 && (
             <>
               <Text fw={600} size="lg" mb="sm">
-                Recent Announcements
+                Latest from the Noticeboard
               </Text>
               <Stack gap="xs">
                 {data.recent_announcements.map((ann) => (
@@ -229,7 +229,7 @@ export default function Dashboard({ onTabChange }) {
                   fullWidth
                   justify="flex-start"
                   leftSection="+"
-                  onClick={() => onTabChange && onTabChange("Announcements")}
+                  onClick={() => onTabChange && onTabChange("Noticeboard")}
                 >
                   Create Announcement
                 </Button>

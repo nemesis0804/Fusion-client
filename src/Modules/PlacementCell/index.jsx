@@ -24,7 +24,6 @@ const ManageApplications = lazy(() => import("./ManageApplications.jsx"));
 const Appeals = lazy(() => import("./Appeals.jsx"));
 const Announcements = lazy(() => import("./Announcements.jsx"));
 const Reports = lazy(() => import("./Reports.jsx"));
-const PlacementSchedule = lazy(() => import("./PlacementSchedule.jsx"));
 const PlacementStatistics = lazy(() => import("./PlacementStatistics.jsx"));
 const DebarredStudents = lazy(() => import("./DebarredStudents.jsx"));
 const PlacementCalendar = lazy(() => import("./PlacementCalendar.jsx"));
@@ -36,69 +35,75 @@ const AlumniDirectory = lazy(() => import("./AlumniDirectory.jsx"));
 const MentorshipHub = lazy(() => import("./MentorshipHub.jsx"));
 const JobReferrals = lazy(() => import("./JobReferrals.jsx"));
 const InterviewManagement = lazy(() => import("./InterviewManagement.jsx"));
+const MyResumes = lazy(() => import("./MyResumes.jsx"));
+const PlacementStatusManagement = lazy(
+  () => import("./PlacementStatusManagement.jsx"),
+);
 
 // Tab configurations per role
+// Tabs are ordered by what officers/students reach for most often. The
+// Noticeboard sits first because it surfaces time-sensitive updates, then
+// the day-to-day workflow (postings → applications → offers/profile), with
+// secondary admin/reporting views at the tail end.
 const TAB_CONFIGS = {
   "placement officer": [
+    { title: "Noticeboard" },
     { title: "Dashboard" },
     { title: "Job Postings" },
-    { title: "Companies" },
     { title: "Applications" },
-    { title: "Appeals" },
-    { title: "Announcements" },
-    { title: "Reports" },
-    { title: "Schedule" },
-    { title: "Student Records" },
-    { title: "Statistics" },
-    { title: "Debarred Students" },
-    { title: "Alumni" },
-    { title: "Job Referrals" },
     { title: "Interviews" },
+    { title: "Companies" },
+    { title: "Placement Status" },
+    { title: "Appeals" },
+    { title: "Job Referrals" },
+    { title: "Student Records" },
+    { title: "Debarred Students" },
+    { title: "Reports" },
+    { title: "Statistics" },
+    { title: "Alumni" },
   ],
   "placement chairman": [
+    { title: "Noticeboard" },
     { title: "Dashboard" },
     { title: "Job Postings" },
-    { title: "Companies" },
     { title: "Applications" },
-    { title: "Appeals" },
-    { title: "Announcements" },
-    { title: "Reports" },
-    { title: "Schedule" },
-    { title: "Student Records" },
-    { title: "Statistics" },
-    { title: "Debarred Students" },
-    { title: "Alumni" },
-    { title: "Job Referrals" },
     { title: "Interviews" },
+    { title: "Companies" },
+    { title: "Placement Status" },
+    { title: "Appeals" },
+    { title: "Job Referrals" },
+    { title: "Student Records" },
+    { title: "Debarred Students" },
+    { title: "Reports" },
+    { title: "Statistics" },
+    { title: "Alumni" },
   ],
   student: [
+    { title: "Noticeboard" },
     { title: "Dashboard" },
-    { title: "My Profile" },
     { title: "Job Postings" },
     { title: "My Applications" },
     { title: "My Offers" },
-    { title: "Appeals" },
-    { title: "Announcements" },
-    { title: "Schedule" },
+    { title: "My Interviews" },
+    { title: "My Profile" },
+    { title: "My Resumes" },
     { title: "Calendar" },
+    { title: "Appeals" },
+    { title: "Job Referrals" },
     { title: "Alumni Network" },
     { title: "Mentors" },
-    { title: "Job Referrals" },
-    { title: "My Interviews" },
-    { title: "Statistics" },
   ],
   alumni: [
+    { title: "Noticeboard" },
     { title: "Dashboard" },
-    { title: "Alumni Registration" },
-    { title: "Mentorship" },
     { title: "Job Referrals" },
-    { title: "Announcements" },
+    { title: "Mentorship" },
+    { title: "Alumni Registration" },
   ],
   default: [
+    { title: "Noticeboard" },
     { title: "Dashboard" },
     { title: "Job Postings" },
-    { title: "Announcements" },
-    { title: "Schedule" },
     { title: "Calendar" },
     { title: "Alumni Registration" },
   ],
@@ -167,6 +172,8 @@ export default function PlacementCell() {
         return <Dashboard role={placementRole} onTabChange={navigateToTab} />;
       case "My Profile":
         return <PlacementProfile role={placementRole} />;
+      case "My Resumes":
+        return <MyResumes />;
       case "Job Postings":
         return <JobPostings role={placementRole} />;
       case "My Applications":
@@ -179,6 +186,7 @@ export default function PlacementCell() {
         return <Appeals role={placementRole} />;
       case "Companies":
         return <ManagementTab role={placementRole} />;
+      case "Noticeboard":
       case "Announcements":
         return <Announcements role={placementRole} />;
       case "Reports":
@@ -186,12 +194,12 @@ export default function PlacementCell() {
       case "Interviews":
       case "My Interviews":
         return <InterviewManagement role={placementRole} />;
-      case "Schedule":
-        return <PlacementSchedule role={placementRole} />;
       case "Student Records":
         return <StudentRecords role={placementRole} />;
       case "Statistics":
         return <PlacementStatistics role={placementRole} />;
+      case "Placement Status":
+        return <PlacementStatusManagement role={placementRole} />;
       case "Calendar":
         return <PlacementCalendar role={placementRole} />;
       case "Debarred Students":

@@ -28,7 +28,6 @@ import {
   MapPin,
   VideoCamera,
   Check,
-  Plus,
   PencilSimple,
   Trash,
   Users,
@@ -279,7 +278,6 @@ export default function InterviewManagement({ role }) {
 
   const [loading, setLoading] = useState(true);
   const [interviews, setInterviews] = useState([]);
-  const [jobPostings, setJobPostings] = useState([]);
 
   // Create / Reschedule modal
   const [formModal, setFormModal] = useState(false);
@@ -335,17 +333,6 @@ export default function InterviewManagement({ role }) {
     fetchInterviews();
   }, [fetchInterviews]);
 
-  useEffect(() => {
-    if (isTpo) {
-      apiGet(jobPostingsRoute)
-        .then((res) => {
-          const list = Array.isArray(res) ? res : res.results || [];
-          setJobPostings(list);
-        })
-        .catch(() => {});
-    }
-  }, [isTpo]);
-
   /* ── Conflict Check (live preview) ── */
   const checkConflicts = async () => {
     if (!form.date || !form.time_slot || !form.venue_or_link) {
@@ -374,23 +361,7 @@ export default function InterviewManagement({ role }) {
     return () => clearTimeout(timer);
   }, [form.date, form.time_slot, form.duration_minutes, form.venue_or_link]);
 
-  /* ── Create / Reschedule ── */
-  const openCreate = () => {
-    setEditing(null);
-    setForm({
-      job_posting: "",
-      date: "",
-      time_slot: "",
-      duration_minutes: 60,
-      mode: "OFFLINE",
-      venue_or_link: "",
-      description: "",
-      round_number: 1,
-    });
-    setConflictWarning(null);
-    setFormModal(true);
-  };
-
+  /* ── Reschedule ── */
   const openEdit = (interview) => {
     setEditing(interview);
     setForm({
@@ -643,9 +614,10 @@ export default function InterviewManagement({ role }) {
           Interview Management
         </Text>
         {isTpo && (
-          <Button leftIcon={<Plus size={16} />} onClick={openCreate}>
-            Schedule Interview
-          </Button>
+          <Text size="xs" c="dimmed">
+            New interviews are scheduled from the Applications tab — pick a
+            shortlisted student and click <b>Schedule Interview</b>.
+          </Text>
         )}
       </Group>
 
@@ -669,14 +641,10 @@ export default function InterviewManagement({ role }) {
             No interviews scheduled yet.
           </Text>
           {isTpo && (
-            <Button
-              variant="light"
-              mt="md"
-              onClick={openCreate}
-              leftIcon={<Plus size={14} />}
-            >
-              Schedule First Interview
-            </Button>
+            <Text size="xs" c="dimmed" mt="xs">
+              Open the <b>Applications</b> tab and click{" "}
+              <b>Schedule Interview</b> on a shortlisted student.
+            </Text>
           )}
         </Card>
       ) : (
@@ -697,33 +665,19 @@ export default function InterviewManagement({ role }) {
         </Grid>
       )}
 
-      {/* ═════ CREATE / RESCHEDULE MODAL ═════ */}
+      {/* ═════ RESCHEDULE MODAL ═════ */}
       <Modal
         opened={formModal}
         onClose={() => setFormModal(false)}
         title={
           editing
             ? `Reschedule Interview (${editing.reschedule_count}/2 used)`
-            : "Schedule Interview"
+            : "Reschedule Interview"
         }
         centered
         size="lg"
       >
         <Stack spacing="sm">
-          {!editing && (
-            <Select
-              label="Job Posting"
-              placeholder="Select job posting"
-              data={jobPostings.map((j) => ({
-                value: String(j.id),
-                label: `${j.title} — ${j.company_name}`,
-              }))}
-              value={form.job_posting ? String(form.job_posting) : ""}
-              onChange={(v) => setForm((f) => ({ ...f, job_posting: v }))}
-              searchable
-              required
-            />
-          )}
           <Group grow>
             <TextInput
               label="Date"
@@ -825,7 +779,7 @@ export default function InterviewManagement({ role }) {
               !!conflictWarning || (editing && editing.reschedule_count >= 2)
             }
           >
-            {editing ? "Reschedule" : "Schedule Interview"}
+            Reschedule
           </Button>
         </Stack>
       </Modal>

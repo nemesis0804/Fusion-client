@@ -21,6 +21,16 @@ const STATUS_COLORS = {
   EXPIRED: "red",
 };
 
+const formatOfferCompensation = (amount, compensationType = "LPA") => {
+  if (amount === null || amount === undefined || amount === "") return "—";
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return String(amount);
+  if (compensationType === "STIPEND_PER_MONTH") {
+    return `₹${n.toLocaleString("en-IN")}/month`;
+  }
+  return `₹${n} LPA`;
+};
+
 export default function MyOffers() {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,9 +124,22 @@ export default function MyOffers() {
               <Group gap="xl" my="sm">
                 <div>
                   <Text size="xs" c="dimmed">
-                    CTC Offered
+                    {offer.posting_compensation_type === "STIPEND_PER_MONTH"
+                      ? "Stipend Offered"
+                      : "CTC Offered"}
                   </Text>
-                  <Text fw={600}>₹{offer.ctc_offered} LPA</Text>
+                  <Text fw={600}>
+                    {formatOfferCompensation(
+                      offer.ctc_offered,
+                      offer.posting_compensation_type,
+                    )}
+                    {offer.posting_compensation_type === "STIPEND_PER_MONTH" &&
+                      offer.posting_internship_duration_months && (
+                        <Text component="span" size="xs" c="dimmed" ml={4}>
+                          × {offer.posting_internship_duration_months} mo
+                        </Text>
+                      )}
+                  </Text>
                 </div>
                 {offer.designation_offered && (
                   <div>

@@ -10,9 +10,9 @@ import {
   Group,
   Stack,
   Loader,
-  FileInput,
   Badge,
   Timeline,
+  Alert,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import axios from "axios";
@@ -21,7 +21,17 @@ import {
   cvDataRoute,
 } from "../../routes/placementCellRoutes";
 import ResumeGenerator from "./components/ResumeGenerator";
+import MyPlacementClaims from "./MyPlacementClaims.jsx";
 import { apiGet, getAuthHeaders } from "./api";
+
+// Fields that must be filled before a student can apply for any posting.
+const REQUIRED_FOR_APPLY = ["professional_email", "linkedin_url", "github_url"];
+
+const FIELD_LABELS = {
+  professional_email: "Professional Email",
+  linkedin_url: "LinkedIn URL",
+  github_url: "GitHub URL",
+};
 
 export default function PlacementProfile() {
   const [loading, setLoading] = useState(true);
@@ -33,28 +43,20 @@ export default function PlacementProfile() {
   const form = useForm({
     initialValues: {
       about_me: "",
+      professional_email: "",
       linkedin_url: "",
       portfolio_url: "",
       github_url: "",
-      resume: null,
     },
     validate: {
+      professional_email: (value) =>
+        value && !/^\S+@\S+\.\S+$/.test(value) ? "Invalid email" : null,
       linkedin_url: (value) =>
         value && !/^https?:\/\//.test(value) ? "Invalid URL" : null,
       github_url: (value) =>
         value && !/^https?:\/\//.test(value) ? "Invalid URL" : null,
       portfolio_url: (value) =>
         value && !/^https?:\/\//.test(value) ? "Invalid URL" : null,
-      resume: (value) => {
-        if (!value && !profile?.resume) return "Resume is mandatory";
-        if (value) {
-          const validTypes = ["application/pdf", "image/jpeg", "image/png"];
-          if (!validTypes.includes(value.type))
-            return "Invalid file type. Only PDF/JPG/PNG";
-          if (value.size > 5 * 1024 * 1024) return "File exceeds 5MB limit";
-        }
-        return null;
-      },
     },
   });
 
@@ -66,10 +68,10 @@ export default function PlacementProfile() {
         setProfile(data);
         form.setValues({
           about_me: data.about_me || "",
+          professional_email: data.professional_email || "",
           linkedin_url: data.linkedin_url || "",
           portfolio_url: data.portfolio_url || "",
           github_url: data.github_url || "",
-          resume: null,
         });
       }
     } catch (error) {
@@ -83,9 +85,8 @@ export default function PlacementProfile() {
     setResumeModalOpened(true);
     if (!cvData) {
       try {
-        const username = profile?.username || profile?.student; // fallback to student ID string if username mapping failed
+        const username = profile?.username || profile?.student;
         const res = await apiGet(`${cvDataRoute}${username}/`);
-        // Merge social links from the already-loaded PlacementProfile as a fallback
         const merged = {
           ...res,
           linkedin_url: res.linkedin_url || profile?.linkedin_url || "",
@@ -108,14 +109,15 @@ export default function PlacementProfile() {
 
   const handleSubmit = async (values) => {
     setSaving(true);
-    const formData = new FormData();
-    formData.append("about_me", values.about_me || "");
-    formData.append("linkedin_url", values.linkedin_url || "");
-    formData.append("portfolio_url", values.portfolio_url || "");
-    formData.append("github_url", values.github_url || "");
-    if (values.resume) {
-      formData.append("resume", values.resume);
-    }
+    // JSON payload — resume is no longer edited from this page (managed in
+    // the dedicated "My Resumes" tab), so we drop the multipart upload path.
+    const payload = {
+      about_me: values.about_me || "",
+      professional_email: values.professional_email || "",
+      linkedin_url: values.linkedin_url || "",
+      portfolio_url: values.portfolio_url || "",
+      github_url: values.github_url || "",
+    };
 
     try {
       const url = profile?.id
@@ -123,16 +125,15 @@ export default function PlacementProfile() {
         : placementProfileRoute;
       const response = await axios[profile?.id ? "patch" : "post"](
         url,
-        formData,
+        payload,
         {
           headers: {
             ...getAuthHeaders(),
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         },
       );
       setProfile(response.data);
-      form.setFieldValue("resume", null);
       alert("Profile updated successfully!");
     } catch (error) {
       console.error(error.response?.data || error);
@@ -150,6 +151,11 @@ export default function PlacementProfile() {
     return <Loader mt="xl" />;
   }
 
+  const missingFields =
+    profile?.missing_required_fields ??
+    REQUIRED_FOR_APPLY.filter((f) => !profile?.[f]);
+  const isComplete = profile?.is_complete ?? missingFields.length === 0;
+
   return (
     <Stack spacing="xl">
       <ResumeGenerator
@@ -157,15 +163,61 @@ export default function PlacementProfile() {
         onClose={() => setResumeModalOpened(false)}
         cvData={cvData}
       />
+
+      {!isComplete && (
+        <Alert color="yellow" title="Profile incomplete" radius="md">
+          You need to fill in the following fields before you can apply for any
+          job posting:{" "}
+          <Text component="span" fw={600}>
+            {missingFields.map((f) => FIELD_LABELS[f] || f).join(", ")}
+          </Text>
+          .
+        </Alert>
+      )}
+
+      {profile?.apply_override && (
+        <Alert color="blue" title="Apply override active" radius="md">
+          The TPO has granted you an override allowing you to continue applying
+          even after being marked placed/interning.
+          {profile.apply_override_remarks ? (
+            <Text size="sm" mt={4} fs="italic">
+              Note: {profile.apply_override_remarks}
+            </Text>
+          ) : null}
+        </Alert>
+      )}
+
+      <MyPlacementClaims />
+
       <Card bg="white" shadow="sm" p="lg" radius="md" withBorder>
         <Group position="apart" mb="md">
-          <Text size="xl" weight={600}>
-            My Placement Profile
-          </Text>
+          <Group>
+            <Text size="xl" weight={600}>
+              My Placement Profile
+            </Text>
+            {isComplete ? (
+              <Badge color="green" variant="light">
+                Ready to apply
+              </Badge>
+            ) : (
+              <Badge color="yellow" variant="light">
+                Incomplete
+              </Badge>
+            )}
+          </Group>
           <Button variant="light" onClick={handleOpenResumeModal}>
             Auto-generate Resume
           </Button>
         </Group>
+
+        <Text size="sm" c="dimmed" mb="md">
+          Your resumes are managed separately under the{" "}
+          <Text span fw={600}>
+            My Resumes
+          </Text>{" "}
+          tab. Contact details (LinkedIn, GitHub, Professional Email) entered
+          here are automatically attached to every application you submit.
+        </Text>
 
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack spacing="md">
@@ -176,45 +228,33 @@ export default function PlacementProfile() {
               {...form.getInputProps("about_me")}
             />
 
+            <TextInput
+              label="Professional Email"
+              required
+              placeholder="firstname.lastname@example.com"
+              description="Used as the contact email on every job application"
+              {...form.getInputProps("professional_email")}
+            />
+
             <Group grow>
               <TextInput
                 label="LinkedIn URL"
+                required
                 placeholder="https://linkedin.com/in/username"
                 {...form.getInputProps("linkedin_url")}
               />
               <TextInput
                 label="GitHub URL"
+                required
                 placeholder="https://github.com/username"
                 {...form.getInputProps("github_url")}
               />
               <TextInput
-                label="Portfolio URL"
+                label="Portfolio URL (optional)"
                 placeholder="https://myportfolio.com"
                 {...form.getInputProps("portfolio_url")}
               />
             </Group>
-
-            <FileInput
-              label={
-                profile?.resume
-                  ? "Update Resume (PDF, JPG, PNG up to 5MB)"
-                  : "Upload Resume (Mandatory, PDF, JPG, PNG up to 5MB)"
-              }
-              placeholder="Choose file"
-              accept="application/pdf,image/jpeg,image/png"
-              clearable
-              {...form.getInputProps("resume")}
-              description={
-                profile?.resume && (
-                  <Text size="sm" mt="xs">
-                    Current Resume:{" "}
-                    <a href={profile.resume} target="_blank" rel="noreferrer">
-                      View Document
-                    </a>
-                  </Text>
-                )
-              }
-            />
 
             <Button
               type="submit"

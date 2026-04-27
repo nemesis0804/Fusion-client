@@ -118,3 +118,11 @@
   opacity: 0.9;
   margin-top: 0.25rem;
 }
+
+.noticeFilters {
+  margin-bottom: 0.5rem;
+}
+
+.noticeHighCard {
+  border-left: 4px solid #fa5252;
+}
