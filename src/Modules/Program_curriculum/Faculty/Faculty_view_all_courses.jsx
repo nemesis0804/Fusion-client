@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   ScrollArea,
   Button,
@@ -8,11 +8,9 @@ import {
   Container,
   Table,
   Grid,
-  LoadingOverlay,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Link } from "react-router-dom";
-import { fetchAllCourses } from "../api/api";
 
 function Admin_view_a_courses() {
   const [activeTab, setActiveTab] = useState("Courses");
@@ -22,26 +20,7 @@ function Admin_view_a_courses() {
     version: "",
     credits: "",
   });
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchAllCourses();
-        setCourses(data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -50,6 +29,42 @@ function Admin_view_a_courses() {
       [name]: value,
     });
   };
+
+  const courses = [
+    {
+      code: "NS205c",
+      name: "Discrete Mathematics",
+      version: "1.0",
+      credits: 4,
+    },
+    {
+      code: "NS205i",
+      name: "Culture and Science - comparison",
+      version: "1.0",
+      credits: 4,
+    },
+    {
+      code: "EC2002",
+      name: "Digital Electronics and Microprocessor Interfacing",
+      version: "1.0",
+      credits: 4,
+    },
+    { code: "Mathematics", name: "Mechatronics", version: "1.0", credits: 4 },
+    { code: "Design", name: "Design", version: "1.0", credits: 4 },
+    {
+      code: "Natural Sciences",
+      name: "Natural Science-Mathematics",
+      version: "1.0",
+      credits: 4,
+    },
+    {
+      code: "Humanities - English",
+      name: "Humanities - English",
+      version: "1.0",
+      credits: 4,
+    },
+    // ... other courses remain the same
+  ];
 
   // Apply filters to courses
   const filteredCourses = courses.filter((course) => {
@@ -60,28 +75,6 @@ function Admin_view_a_courses() {
       course.credits.toString().includes(filter.credits)
     );
   });
-
-  if (loading) {
-    return (
-      <MantineProvider theme={{ colorScheme: "light" }}>
-        <Container
-          style={{ padding: "20px", maxWidth: "100%", height: "100vh" }}
-        >
-          <LoadingOverlay visible={false} overlayBlur={2} />
-        </Container>
-      </MantineProvider>
-    );
-  }
-
-  if (error) {
-    return (
-      <MantineProvider theme={{ colorScheme: "light" }}>
-        <Container style={{ padding: "20px", maxWidth: "100%" }}>
-          <div style={{ color: "red" }}>Error: {error}</div>
-        </Container>
-      </MantineProvider>
-    );
-  }
 
   return (
     <MantineProvider
@@ -131,7 +124,6 @@ function Admin_view_a_courses() {
                 overflowY: "auto",
                 border: "1px solid #d3d3d3",
                 borderRadius: "10px",
-                position: "relative",
               }}
             >
               <style>
@@ -152,7 +144,7 @@ function Admin_view_a_courses() {
                 <thead>
                   <tr>
                     {[
-                      "Code",
+                      "Course Code",
                       "Course Name",
                       "Version",
                       "Credits",
@@ -192,7 +184,7 @@ function Admin_view_a_courses() {
                         }}
                       >
                         <Link
-                          to={`/programme_curriculum/faculty_course_view/${course.id}`}
+                          to={`/programme_curriculum/faculty_course_view?course=${course.code}`}
                           style={{
                             color: "#3498db",
                             textDecoration: "none",
@@ -239,7 +231,7 @@ function Admin_view_a_courses() {
                         }}
                       >
                         <Link
-                          to={`/programme_curriculum/edit_course_proposal_form/${course.id}`}
+                          to={`/programme_curriculum/faculty_forward_form?course=${course.code}`}
                         >
                           <Button
                             style={{

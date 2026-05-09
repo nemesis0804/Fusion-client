@@ -10,14 +10,10 @@ import {
   TextInput,
   Table,
   MultiSelect,
-  Badge,
-  Alert,
-  Modal,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useNavigate, useParams } from "react-router-dom";
-import { notifications } from "@mantine/notifications";
-import { showVersioningNotification } from "../../../utils/notifications";
+// import { useNavigate } from "react-router-dom";
 import {
   fetchDisciplinesData,
   fetchAllCourses,
@@ -50,13 +46,6 @@ function Admin_edit_course_form() {
       labEvaluation: 15,
       attendance: 5,
     },
-    validate: {
-      courseName: (value) => (value ? null : "Course name is required"),
-      courseCode: (value) => (value ? null : "Course code is required"),
-      discipline: (value) => (value ? null : "Discipline is required"),
-      syllabus: (value) => (value ? null : "Syllabus is required"),
-      references: (value) => (value ? null : "References is required"),
-    },
   });
 
   const navigate = useNavigate();
@@ -64,12 +53,6 @@ function Admin_edit_course_form() {
   const [disciplines, setDisciplines] = useState([]);
   const [courses, setCourses] = useState([]);
   const [course, setCourse] = useState([]);
-  
-  // New state for intelligent versioning
-  const [versionInfo, setVersionInfo] = useState(null);
-  const [showVersionPreview, setShowVersionPreview] = useState(false);
-  const [previewInfo, setPreviewInfo] = useState(null);
-  const [originalFormData, setOriginalFormData] = useState(null);
 
   useEffect(() => {
     const fetchDisciplines = async () => {
@@ -81,18 +64,14 @@ function Admin_edit_course_form() {
         }));
         setDisciplines(disciplineList);
       } catch (fetchError) {
-        notifications.show({
-          title: "Error",
-          message: "Failed to load disciplines. Please refresh the page.",
-          color: "red",
-          autoClose: 4000,
-        });
+        console.error("Error fetching disciplines: ", fetchError);
       }
     };
 
     const fetchCourses = async () => {
       try {
         const response = await fetchAllCourses();
+        console.log("Courses data:", response);
 
         const courseList = response.map((c) => ({
           name: `${c.name} (${c.code})`,
@@ -100,22 +79,16 @@ function Admin_edit_course_form() {
         }));
         setCourses(courseList);
       } catch (error) {
-        notifications.show({
-          title: "Error",
-          message: "Failed to load courses. Please refresh the page.",
-          color: "red",
-          autoClose: 4000,
-        });
+        console.error("Error fetching courses: ", error);
       }
     };
 
     const loadCourseDetails = async () => {
       try {
         const data = await fetchCourseDetails(id);
+        console.log(data);
         setCourse(data);
-        
-        // Store original form data for version comparison
-        const formData = {
+        form.setValues({
           courseName: data.name,
           courseCode: data.code,
           courseCredit: data.credit,
@@ -125,9 +98,15 @@ function Admin_edit_course_form() {
           practicalHours: data.pratical_hours,
           discussionHours: data.discussion_hours,
           projectHours: data.project_hours,
-          discipline: data.disciplines.length>0?data.disciplines.map((d) => JSON.stringify(d)):[],
+          discipline:
+            data.disciplines.length > 0
+              ? data.disciplines.map((d) => JSON.stringify(d))
+              : [],
           preRequisites: data.pre_requisits,
-          preRequisiteCourse: data.pre_requisit_courses.length>0?data.pre_requisit_courses.map((c) => JSON.stringify(c)):[],
+          preRequisiteCourse:
+            data.pre_requisit_courses.length > 0
+              ? data.pre_requisit_courses.map((c) => JSON.stringify(c))
+              : [],
           syllabus: data.syllabus,
           references: data.ref_books,
           quiz1: data.percent_quiz_1,
@@ -138,17 +117,9 @@ function Admin_edit_course_form() {
           labEvaluation: data.percent_lab_evaluation,
           attendance: data.percent_course_attendance,
           maxSeats: data.max_seats,
-        };
-        
-        form.setValues(formData);
-        setOriginalFormData(formData);
-      } catch (err) {
-        notifications.show({
-          title: "Error",
-          message: "Failed to load course details. Please refresh the page.",
-          color: "red",
-          autoClose: 4000,
         });
+      } catch (err) {
+        console.error("Error fetching course details: ", err);
       }
     };
 
@@ -156,80 +127,16 @@ function Admin_edit_course_form() {
     fetchCourses();
     loadCourseDetails();
   }, [id]);
-  
-  // Preview version changes before submitting
-  const previewVersionChanges = async () => {
-    if (!originalFormData) return;
-    
-    try {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(`${host}/programme_curriculum/api/test_intelligent_versioning/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-        body: JSON.stringify({
-          old_course_data: {
-            name: originalFormData.courseName,
-            code: originalFormData.courseCode,
-            credit: originalFormData.courseCredit,
-            lecture_hours: originalFormData.lectureHours,
-            tutorial_hours: originalFormData.tutorialHours,
-            pratical_hours: originalFormData.practicalHours,
-            discussion_hours: originalFormData.discussionHours,
-            project_hours: originalFormData.projectHours,
-            syllabus: originalFormData.syllabus,
-            ref_books: originalFormData.references,
-            percent_quiz_1: originalFormData.quiz1,
-            percent_midsem: originalFormData.midsem,
-            percent_quiz_2: originalFormData.quiz2,
-            percent_endsem: originalFormData.endsem,
-            percent_project: originalFormData.project,
-            percent_lab_evaluation: originalFormData.labEvaluation,
-            percent_course_attendance: originalFormData.attendance,
-          },
-          new_course_data: {
-            name: form.values.courseName,
-            code: form.values.courseCode,
-            credit: form.values.courseCredit,
-            lecture_hours: form.values.lectureHours,
-            tutorial_hours: form.values.tutorialHours,
-            pratical_hours: form.values.practicalHours,
-            discussion_hours: form.values.discussionHours,
-            project_hours: form.values.projectHours,
-            syllabus: form.values.syllabus,
-            ref_books: form.values.references,
-            percent_quiz_1: form.values.quiz1,
-            percent_midsem: form.values.midsem,
-            percent_quiz_2: form.values.quiz2,
-            percent_endsem: form.values.endsem,
-            percent_project: form.values.project,
-            percent_lab_evaluation: form.values.labEvaluation,
-            percent_course_attendance: form.values.attendance,
-          }
-        }),
-      });
-      
-      if (response.ok) {
-        const preview = await response.json();
-        setPreviewInfo(preview);
-        setShowVersionPreview(true);
-      }
-    } catch (error) {
-      console.error("Error previewing version changes:", error);
-    }
-  };
-  
+  // console.log(form.values);
   const handleSubmit = async (values) => {
     const apiUrl = `${host}/programme_curriculum/api/admin_update_course/${id}/`;
     const token = localStorage.getItem("authToken");
-    localStorage.setItem("AdminCoursesCachechange", "true");
-    
+
     const payload = {
       name: values.courseName,
       code: values.courseCode,
       credit: values.courseCredit,
+      version: values.courseVersion,
       lecture_hours: values.lectureHours,
       tutorial_hours: values.tutorialHours,
       pratical_hours: values.practicalHours,
@@ -253,7 +160,6 @@ function Admin_edit_course_form() {
       const response = await fetch(apiUrl, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Token ${token}`,
         },
         body: JSON.stringify(payload),
@@ -261,77 +167,18 @@ function Admin_edit_course_form() {
 
       if (response.ok) {
         const data = await response.json();
-        
-        // Store version information for display
-        if (data.old_version && data.new_version) {
-          setVersionInfo({
-            oldVersion: data.old_version,
-            newVersion: data.new_version,
-            bumpType: data.version_bump_type,
-            changedFields: data.changed_academic_fields || [],
-            reason: data.reason || "Course updated successfully",
-          });
-        }
-        
-        // Enhanced notification with version information using utility function
-        showVersioningNotification({
-          entityName: values.courseName,
-          entityCode: values.courseCode,
-          oldVersion: data.old_version,
-          newVersion: data.new_version,
-          versionBumpType: data.version_bump_type,
-          reason: data.reason,
-          changedFields: data.changed_academic_fields || [],
-        });
-        
-        setTimeout(() => {
-          navigate(`/programme_curriculum/admin_course/${data.course_id}`);
-        }, 1500);
+        alert("Course updated successfully!");
+        navigate(`/programme_curriculum/admin_course/${data.course_id}`);
       } else {
         const errorData = await response.json();
-        
-        notifications.show({
-          title: "❌ Failed to Update Course",
-          message: (
-            <div>
-              <Text size="sm" mb={8}>
-                <strong>Failed to update course: {errorData.error || response.statusText}</strong>
-              </Text>
-              <Text size="xs" color="gray.7">
-                Please check your inputs and try again.
-              </Text>
-            </div>
-          ),
-          color: "red",
-          autoClose: 7000,
-          style: {
-            backgroundColor: '#f8d7da',
-            borderColor: '#f5c6cb',
-            color: '#721c24',
-          },
-        });
+        console.error("Error:", errorData);
+        alert(
+          `Failed to update course: ${errorData.error || response.statusText}`,
+        );
       }
     } catch (error) {
-      notifications.show({
-        title: "🚨 Network Error",
-        message: (
-          <div>
-            <Text size="sm" mb={8}>
-              <strong>Connection error occurred while updating course.</strong>
-            </Text>
-            <Text size="xs" color="gray.7">
-              Please check your internet connection and try again.
-            </Text>
-          </div>
-        ),
-        color: "red",
-        autoClose: 7000,
-        style: {
-          backgroundColor: '#f8d7da',
-          borderColor: '#f5c6cb',
-          color: '#721c24',
-        },
-      });
+      console.error("Network Error:", error);
+      alert("An error occurred. Please try again.");
     }
   };
   return (
@@ -475,15 +322,12 @@ function Admin_edit_course_form() {
                             form.setFieldValue("courseCredit", value)
                           }
                           required
-                          readOnly
                           styles={{
                             input: {
                               borderRadius: "4px",
                               height: "30px",
                               fontSize: "14px",
                               border: "none",
-                              backgroundColor: "#f5f5f5",
-                              color: "#666",
                             },
                           }}
                         />
@@ -527,6 +371,7 @@ function Admin_edit_course_form() {
                   </tbody>
                 </Table>
 
+                {/* Contact Hours */}
                 <Group
                   grow
                   style={{
@@ -648,21 +493,22 @@ function Admin_edit_course_form() {
                     step={1}
                   />
                 </Group>
+                {/* Discipline and Others */}
                 <MultiSelect
                   label="From Discipline"
                   placeholder="Select Discipline"
                   data={disciplines.map((discipline) => ({
                     label: discipline.name,
-                    value: discipline.id.toString(),
+                    value: discipline.id.toString(), // Ensure value is a string for the MultiSelect component
                     ...discipline,
                   }))}
                   value={
                     Array.isArray(form.values.discipline)
-                      ? form.values.discipline.map(String)
+                      ? form.values.discipline.map(String) // Convert integers to strings for the MultiSelect component
                       : []
                   }
                   onChange={(value) => {
-                    const integerValues = value ? value.map(Number) : [];
+                    const integerValues = value ? value.map(Number) : []; // Convert selected strings back to integers
                     form.setFieldValue("discipline", integerValues);
                   }}
                   required
@@ -704,8 +550,6 @@ function Admin_edit_course_form() {
                   onChange={(event) =>
                     form.setFieldValue("syllabus", event.currentTarget.value)
                   }
-                  required
-                  error={form.errors.syllabus}
                 />
                 <Textarea
                   label="References"
@@ -714,8 +558,6 @@ function Admin_edit_course_form() {
                   onChange={(event) =>
                     form.setFieldValue("references", event.currentTarget.value)
                   }
-                  required
-                  error={form.errors.references}
                 />
                 <Group
                   grow
@@ -849,76 +691,14 @@ function Admin_edit_course_form() {
                   />
                 </Group>
 
-                <Group position="apart">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate(-1)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" mt="md">
-                    Save Changes
-                  </Button>
-                </Group>
+                <Button type="submit" mt="md">
+                  Submit
+                </Button>
               </Stack>
             </form>
           </div>
         </div>
       </Container>
-      
-      {/* Version Preview Modal */}
-      <Modal
-        opened={showVersionPreview}
-        onClose={() => setShowVersionPreview(false)}
-        title="📋 Version Change Preview"
-        size="lg"
-      >
-        {previewInfo && (
-          <Stack spacing="md">
-            <Alert 
-              color={previewInfo.version_bump_type === 'MAJOR' ? 'red' : 
-                     previewInfo.version_bump_type === 'MINOR' ? 'orange' : 
-                     previewInfo.version_bump_type === 'PATCH' ? 'green' : 'gray'}
-              variant="light"
-            >
-              <Text weight={600}>
-                {previewInfo.version_bump_type === 'NONE' ? 
-                  '✏️ No version bump required' : 
-                  `🔄 ${previewInfo.version_bump_type} version bump detected`
-                }
-              </Text>
-              <Text size="sm" mt={4}>
-                {previewInfo.reason}
-              </Text>
-            </Alert>
-            
-            {previewInfo.changed_academic_fields && previewInfo.changed_academic_fields.length > 0 && (
-              <div>
-                <Text size="sm" weight={500}>Changed Academic Fields:</Text>
-                <Group spacing="xs" mt={4}>
-                  {previewInfo.changed_academic_fields.map((field, index) => (
-                    <Badge key={index} variant="outline" size="sm">
-                      {field}
-                    </Badge>
-                  ))}
-                </Group>
-              </div>
-            )}
-            
-            {previewInfo.old_version && previewInfo.new_version && (
-              <Text size="sm">
-                <strong>Version Change:</strong> {previewInfo.old_version} → {previewInfo.new_version}
-              </Text>
-            )}
-            
-            <Group position="right" mt="lg">
-              <Button variant="outline" onClick={() => setShowVersionPreview(false)}>
-                Close
-              </Button>
-            </Group>
-          </Stack>
-        )}
-      </Modal>
     </div>
   );
 }

@@ -1,0 +1,153 @@
+.content-container {
+  padding: 30px;
+  margin-left: 32px;
+  margin-right: 32px;
+  background-color: #fff;
+  border-radius: 8px;
+  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); */
+}
+
+h2 {
+  text-align: center;
+}
+
+.subheading {
+  font-size: 0.8em;
+  font-weight: normal;
+}
+
+.input-section {
+  margin-bottom: 20px;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: white;
+}
+
+.custom-table th {
+  padding: 8px;
+  text-align: center;
+  border: none;
+  border-bottom: 2px solid #ddd;
+  border-right: 1px solid #ddd;
+  background-color: white;
+  font-weight: bold;
+  font-size: 16px;
+  color: #333;
+}
+
+.custom-table td {
+  padding: 10px;
+  text-align: center;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+}
+
+.custom-table td:last-child,
+.custom-table th:last-child {
+  border-right: none;
+}
+
+.custom-table tbody tr {
+  background-color: white;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.custom-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 768px) {
+  .custom-table th,
+  .custom-table td {
+    font-size: 14px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .custom-table th,
+  .custom-table td {
+    font-size: 12px;
+    padding: 5px;
+  }
+}
+
+
+.customButton {
+  background-color: #6200ea;
+  color: #fff;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.customButton:hover {
+  background-color: #4500b5;
+}
+
+h2 {
+  color: #15abff; /* Blue color for headings */
+  font-size: 2rem; /* Adjusted font size */
+  margin-bottom: 15px;
+}
+
+input[type="file"] {
+  margin-bottom: 10px;
+}
+
+a {
+  color: #6200ea;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.action-icon {
+  cursor: pointer;
+}
+
+.action-icon:hover {
+  color: red;
+}
+
+.file-name {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.submit_btn {
+  background-color: #15abff;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.submit_btn:hover {
+  background-color: #25acde;
+}
+
+.module-section h2{
+  font-size: 26px;
+}
+
+.slide-section h2{
+  font-size: 26px;
+}

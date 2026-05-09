@@ -10,7 +10,6 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useNavigate } from "react-router-dom";
-import { notifications } from "@mantine/notifications";
 import { fetchAllProgrammes } from "../api/api";
 import { host } from "../../../routes/globalRoutes";
 
@@ -35,31 +34,30 @@ function Admin_add_discipline_form() {
           throw new Error("Authorization token not found");
         }
         const response = await fetchAllProgrammes(token);
+        console.log(response);
 
         const programmeData = [
           ...response.ug_programmes,
           ...response.pg_programmes,
           ...response.phd_programmes,
         ];
+        console.log(programmeData);
 
         // Filter programmes that are not connected to a discipline
         const filteredProgrammes = programmeData.filter(
-          (programme) => !programme.discipline__name,
+          (programme) => !programme.discipline__name, // Keep programmes where discipline__name is falsy
         );
 
+        // Now map the filtered data
         const programmeList = filteredProgrammes.map((programme) => ({
           name: `${programme.name} ${programme.programme_begin_year}`,
           id: `${programme.id}`,
         }));
 
         setProgrammes(programmeList);
+        console.log("Fin data: ", programmeList); // Log the final filtered and mapped data
       } catch (fetchError) {
-        notifications.show({
-          title: "Error",
-          message: "Failed to load programmes. Please refresh the page.",
-          color: "red",
-          autoClose: 4000,
-        });
+        console.error("Error fetching data:", fetchError);
       }
     };
 
@@ -68,12 +66,14 @@ function Admin_add_discipline_form() {
   const handleSubmit = async (values) => {
     const apiUrl = `${host}/programme_curriculum/api/admin_add_discipline/`;
     const token = localStorage.getItem("authToken");
+    console.log("Form Values:", values);
 
     const payload = {
       name: values.disciplineName,
       acronym: values.acronym,
       programmes: values.linkedProgrammes,
     };
+    console.log("Payload: ", payload);
 
     try {
       setLoading(true);
@@ -88,90 +88,47 @@ function Admin_add_discipline_form() {
       if (response.ok) {
         localStorage.setItem("AdminDisciplineCachechange", "true");
         const data = await response.json();
-        
-        notifications.show({
-          title: "✅ Discipline Added Successfully!",
-          message: (
-            <div>
-              <Text size="sm" mb={8}>
-                <strong>Discipline "{values.disciplineName}" has been created.</strong>
-              </Text>
-              <Text size="xs" color="gray.7">
-                Acronym: {values.acronym} | Linked Programmes: {values.linkedProgrammes?.length || 0}
-              </Text>
-            </div>
-          ),
-          color: "green",
-          autoClose: 5000,
-          style: {
-            backgroundColor: '#d4edda',
-            borderColor: '#c3e6cb',
-            color: '#155724',
-          },
-        });
-        
-        form.reset();
-        setTimeout(() => {
-          navigate("/programme_curriculum/acad_discipline_view");
-        }, 1500);
+        alert("Discipline added successfully!");
+        console.log("Response Data:", data);
+        navigate("/programme_curriculum/acad_discipline_view");
       } else {
         const errorText = await response.text();
-        
-        notifications.show({
-          title: "❌ Failed to Add Discipline",
-          message: (
-            <div>
-              <Text size="sm" mb={8}>
-                <strong>Unable to create discipline. Please try again.</strong>
-              </Text>
-              <Text size="xs" color="gray.7">
-                Please check your inputs and try again.
-              </Text>
-            </div>
-          ),
-          color: "red",
-          autoClose: 7000,
-          style: {
-            backgroundColor: '#f8d7da',
-            borderColor: '#f5c6cb',
-            color: '#721c24',
-          },
-        });
+        console.error("Error:", errorText);
+        alert("Failed to add programme.");
       }
     } catch (error) {
-      notifications.show({
-        title: "🚨 Network Error",
-        message: (
-          <div>
-            <Text size="sm" mb={8}>
-              <strong>Connection error occurred while adding discipline.</strong>
-            </Text>
-            <Text size="xs" color="gray.7">
-              Please check your internet connection and try again.
-            </Text>
-          </div>
-        ),
-        color: "red",
-        autoClose: 7000,
-        style: {
-          backgroundColor: '#f8d7da',
-          borderColor: '#f5c6cb',
-          color: '#721c24',
-        },
-      });
+      console.error("Network Error:", error);
+      alert("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    navigate("/programme_curriculum/acad_discipline_view");
-  };
+  // const breadcrumbItems = [
+  //   { title: "Program and Curriculum", href: "#" },
+  //   { title: "Curriculums", href: "#" },
+  //   { title: "Discipline Form", href: "#" },
+  // ].map((item, index) => (
+  //   <Anchor href={item.href} key={index}>
+  //     {item.title}
+  //   </Anchor>
+  // ));
 
   return (
     <div
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
     >
+      {/* <Breadcrumbs>{breadcrumbItems}</Breadcrumbs> */}
+
+      {/* Options Section */}
+      {/* <Group spacing="xs" className="program-options" position="center" mt="md">
+        <Text>Programmes</Text>
+        <Text className="active">Curriculums</Text>
+        <Text>Courses</Text>
+        <Text>Disciplines</Text>
+        <Text>Batches</Text>
+      </Group> */}
+
       <Container
         fluid
         style={{
@@ -192,6 +149,7 @@ function Admin_add_discipline_form() {
             flex: 4,
           }}
         >
+          {/* Form Section */}
           <div style={{ flex: 4 }}>
             <form
               onSubmit={form.onSubmit(handleSubmit)}
@@ -256,11 +214,7 @@ function Admin_add_discipline_form() {
               </Stack>
 
               <Group position="right" mt="lg">
-                <Button
-                  variant="outline"
-                  className="cancel-btn"
-                  onClick={handleCancel}
-                >
+                <Button variant="outline" className="cancel-btn">
                   Cancel
                 </Button>
                 <Button type="submit" className="submit-btn" loading={loading}>
@@ -270,6 +224,7 @@ function Admin_add_discipline_form() {
             </form>
           </div>
 
+          {/* Right Panel Buttons */}
           <div
             style={{
               flex: 1,
@@ -278,6 +233,13 @@ function Admin_add_discipline_form() {
               justifyContent: "flex-start",
             }}
           >
+            {/* <Group spacing="md" direction="column" style={{ width: "100%" }}>
+              <Button className="right-btn-discipline">Add Discipline</Button>
+              <Button className="right-btn-discipline">
+                Add Another Batch
+              </Button>
+              <Button className="right-btn-discipline">Add Course</Button>
+            </Group> */}
           </div>
         </div>
       </Container>

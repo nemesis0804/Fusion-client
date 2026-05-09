@@ -4,7 +4,8 @@ import { CaretCircleLeft, CaretCircleRight } from "@phosphor-icons/react";
 // import CustomBreadcrumbs from "../../../../components/Breadcrumbs";
 import classes from "../../../Dashboard/Dashboard.module.css"; // Ensure the CSS module is properly set
 import Achievements from "./Achievements";
-import ExpertLectures from "./ExpertLectures";
+// import ExpertLectures from "./ExpertLectures";
+import Honors from "../Honors/Honors";
 
 // eslint-disable-next-line react/prop-types
 function OtherMaster({ setBreadCrumbItems }) {
@@ -14,7 +15,11 @@ function OtherMaster({ setBreadCrumbItems }) {
   // Tab items data
   const tabItems = [
     { title: "Achievements", component: <Achievements /> },
-    { title: "Experts Lectures/Invited Talks", component: <ExpertLectures /> },
+    // { title: "Experts Lectures/Invited Talks", component: <ExpertLectures /> },
+    {
+      title: "Honors",
+      component: <Honors />,
+    },
   ];
 
   // Handle tab change (previous/next)

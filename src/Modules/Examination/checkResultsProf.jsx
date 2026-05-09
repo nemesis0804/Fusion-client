@@ -1,217 +1,377 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
+  Container,
+  Paper,
   Select,
   Button,
-  Card,
-  Title,
   Group,
+  Title,
+  Text,
   Loader,
   Alert,
-  Text,
-  Badge,
+  Card,
   Stack,
+  Grid,
+  Badge,
+  ScrollArea,
   Divider,
+  Transition,
+  Box,
 } from "@mantine/core";
-import { showNotification } from "@mantine/notifications";
+import { useDisclosure } from "@mantine/hooks";
+import {
+  get_courses_prof,
+  download_grades_prof,
+} from "./routes/examinationRoutes";
 import axios from "axios";
+import { Alarm, Book, Calendar, Download } from "phosphor-react";
 import { useSelector } from "react-redux";
-import { get_courses_prof, download_grades_prof, get_student_grades_academic_years } from "./routes/examinationRoutes";
-
-export default function GradesDownloadPage() {
-  const userRole = useSelector((s) => s.user.role);
-  const currentYear = new Date().getFullYear();
-
-  
-
-  const semesterOptions = [
-    { value: "Odd Semester", label: "Odd" },
-    { value: "Even Semester", label: "Even" },
-  ];
-  
-  const programmeTypes = [
-    { value: "UG", label: "UG (Undergraduate)" },
-    { value: "PG", label: "PG (Postgraduate)" },
-  ];
-
-  const [year, setYear] = useState("");
-  const [academicYears, setAcademicYears] = useState([]); 
-  const [semester, setSemester] = useState("");
-  const [programmeType, setProgrammeType] = useState("UG");
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [downloadLoading, setDownloadLoading] = useState(null);
-  const [error, setError] = useState("");
-
+function GradesDownloadPage() {
+  const [years, setYears] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(
+    new Date().getFullYear().toString(),
+  );
   useEffect(() => {
-    async function fetchAcademicYears() {
-      setLoading(true);
-      setError("");
-      try {
-        const token = localStorage.getItem("authToken");
-        const { data } = await axios.get(
-          get_student_grades_academic_years,
-          { headers: { Authorization: `Token ${token}` } }
-        );
-        setAcademicYears(data.academic_years.map((y) => ({ value: y, label: y })));
-      } catch {
-        setError("Failed to load academic years.");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAcademicYears();
+    const currentYear = new Date().getFullYear();
+    const generatedYears = Array.from(
+      { length: currentYear - 2021 + 1 },
+      (_, i) => (currentYear - i).toString(),
+    );
+    setYears(generatedYears);
+  }, []);
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const [visible, { toggle }] = useDisclosure(false);
+  const userRole = useSelector((state) => state.user.role);
+  useEffect(() => {
+    // Show animation on initial load
+    toggle();
+
+    // Fetch courses on component mount
+    fetchCourses(selectedYear);
   }, []);
 
-
-  const fetchCourses = async () => {
-    if (!year || !semester || !programmeType) {
-      showNotification({ title: "Error", message: "Select year, semester & programme type", color: "red" });
-      return;
-    }
+  const fetchCourses = async (year) => {
     setLoading(true);
-    setError(""); // Clear previous errors before new request
+    setError("");
+    setSelectedCourse(null);
+
     try {
-      const token = localStorage.getItem("authToken");
-      const { data } = await axios.post(
+      const token = localStorage.getItem("authToken"); // Assuming token is stored here
+
+      const response = await axios.post(
         get_courses_prof,
-        { 
-          Role: userRole, 
-          academic_year: year, 
-          semester_type: semester,
-          programme_type: programmeType
+        {
+          Role: userRole,
+          academic_year: year,
         },
-        { headers: { Authorization: `Token ${token}` } }
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
       );
-      setCourses(data.courses || []);
+
+      setCourses(response.data.courses);
     } catch (err) {
-      const msg = err.response?.data?.error || "Failed to fetch courses";
-      setError(msg);
-      showNotification({ title: "Error", message: msg, color: "red" });
+      console.error("Error fetching courses:", err);
+
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Failed to load courses. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleYearChange = (year) => {
+    setSelectedYear(year);
+    fetchCourses(year);
+  };
+
   const handleDownload = async (courseId) => {
-    setDownloadLoading(courseId);
-    setError(""); // Clear previous error before new download attempt
+    setDownloadLoading(true);
+
     try {
       const token = localStorage.getItem("authToken");
-      const resp = await axios.post(
-        download_grades_prof,
-        { 
-          Role: userRole, 
-          academic_year: year, 
-          course_id: courseId, 
-          semester_type: semester,
-          programme_type: programmeType
+
+      const response = await axios({
+        url: download_grades_prof,
+        method: "POST",
+        data: {
+          Role: userRole,
+          course_id: courseId,
+          academic_year: selectedYear,
         },
-        { headers: { Authorization: `Token ${token}` }, responseType: "blob" }
-      );
-      
-      // Filename: CourseCode_CourseName_grades_AcademicYear.pdf
-      const selectedCourse = courses.find(c => c.id === courseId);
-      let courseCode = 'Course';
-      let courseName = 'Grades';
-      
-      if (selectedCourse) {
-        courseCode = selectedCourse.code || 'Course';
-        courseName = selectedCourse.name || 'Grades';
-      }
-      
-      const courseNameClean = courseName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
-      const filename = `${courseCode}_${courseNameClean}_Grades_${year}.pdf`;
-      
-      const url = URL.createObjectURL(new Blob([resp.data]));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      showNotification({ title: "Downloaded", message: "PDF saved", color: "green" });
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+        responseType: "blob", // Important for file downloads
+      });
+
+      // Create a download link and trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `grades_${courseId}_${selectedYear}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch (err) {
-      const msg = err.response?.data?.error || "Download failed";
-      setError(msg);
-      showNotification({ title: "Error", message: msg, color: "red" });
+      console.error("Error downloading grades:", err);
+
+      if (err.response && err.response.data) {
+        // For blob responses, we need to convert to text first
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const errorData = JSON.parse(reader.result);
+            setError(errorData.error || "Failed to download grades");
+          } catch (e) {
+            setError("Failed to download grades. Please try again.");
+          }
+        };
+        reader.readAsText(err.response.data);
+      } else {
+        setError("Failed to download grades. Please try again.");
+      }
     } finally {
-      setDownloadLoading(null);
+      setDownloadLoading(false);
     }
   };
 
+  const truncateSyllabus = (syllabus) => {
+    if (!syllabus || syllabus === "NA") return "No syllabus available";
+    return syllabus.length > 100
+      ? syllabus.substring(0, 100) + "..."
+      : syllabus;
+  };
+
+  // Inline styles instead of createStyles
+  const containerStyle = {
+    maxWidth: "calc(100% - 50px)",
+    width: "100%",
+    padding: "24px",
+  };
+
+  const headerStyle = {
+    marginBottom: "16px",
+    borderBottom: "1px solid #e9ecef",
+    paddingBottom: "12px",
+  };
+
+  const courseCardStyle = {
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+    cursor: "pointer",
+  };
+
+  const courseCardHoverStyle = {
+    transform: "translateY(-5px)",
+    boxShadow:
+      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+  };
+
+  const selectedCardStyle = {
+    borderColor: "#228be6",
+    borderWidth: 2,
+    borderStyle: "solid",
+  };
+
+  const badgeStyle = {
+    marginRight: "8px",
+  };
+
+  const cardContentStyle = {
+    flex: 1,
+  };
+
+  const downloadButtonStyle = {
+    marginTop: "auto",
+  };
+
   return (
-    <Card withBorder p="lg">
-      <Stack spacing="md">
-        <Title order={1}>Download Course Grades</Title>
+    <Transition
+      mounted={visible}
+      transition="fade"
+      duration={400}
+      timingFunction="ease"
+    >
+      {(styles) => (
+        <Container style={{ ...containerStyle, ...styles }}>
+          <Paper shadow="sm" p="md" withBorder>
+            <div style={headerStyle}>
+              <Group position="apart" mb="xs">
+                <Title order={2}>
+                  {/* <Book
+                    size={28}
+                    style={{ marginRight: 10, verticalAlign: "bottom" }}
+                  /> */}
+                  Course Grades Download
+                </Title>
+                <Select
+                  placeholder="Select Academic Year"
+                  //   label="Academic Year"
+                  icon={<Calendar size={16} />}
+                  value={selectedYear}
+                  onChange={handleYearChange}
+                  data={years}
+                  style={{ width: 200 }}
+                />
+              </Group>
+              <Text color="dimmed">
+                Select a course to download its grade sheet
+              </Text>
+            </div>
 
-        {error && (
-          <Alert color="red" withCloseButton onClose={() => setError("")}>
-            {error}
-          </Alert>
-        )}
+            {error && (
+              <Alert
+                icon={<Alarm size={16} />}
+                title="Error"
+                color="red"
+                mb="md"
+                withCloseButton
+                onClose={() => setError("")}
+              >
+                {error}
+              </Alert>
+            )}
 
-        <Group spacing="sm">
-          <Select
-            placeholder="Academic Year"
-            data={academicYears}
-            value={year}
-            onChange={setYear}
-            disabled={loading}
-          />
-          <Select
-            placeholder="Semester"
-            data={semesterOptions}
-            value={semester}
-            onChange={setSemester}
-            disabled={loading}
-          />
-          <Select
-            placeholder="Programme Type"
-            data={programmeTypes}
-            value={programmeType}
-            onChange={setProgrammeType}
-            disabled={loading}
-            required
-          />
-          <Button variant="outline" onClick={fetchCourses} loading={loading}>
-            Fetch
-          </Button>
-        </Group>
+            {loading ? (
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "50px 0",
+                }}
+              >
+                <Loader size="lg" variant="dots" />
+              </Box>
+            ) : courses.length === 0 ? (
+              <Alert color="blue" title="No courses found">
+                No courses are available for the selected academic year.
+              </Alert>
+            ) : (
+              <ScrollArea style={{ height: "auto" }}>
+                <Grid gutter="md">
+                  {courses.map((course) => (
+                    <Grid.Col key={course.id} xs={12} sm={6} md={6} lg={4}>
+                      <Card
+                        p="lg"
+                        withBorder
+                        style={{
+                          ...courseCardStyle,
+                          ...(selectedCourse === course.id
+                            ? selectedCardStyle
+                            : {}),
+                        }}
+                        sx={(theme) => ({
+                          "&:hover": courseCardHoverStyle,
+                        })}
+                        onClick={() => setSelectedCourse(course.id)}
+                      >
+                        <Card.Section p="md" withBorder>
+                          <Group position="apart">
+                            <Text weight={700} size="lg">
+                              {course.name}
+                            </Text>
+                            {course.latest_version && (
+                              <Badge color="green" variant="filled" size="sm">
+                                Latest Version
+                              </Badge>
+                            )}
+                          </Group>
+                          <Text color="dimmed" size="sm">
+                            {course.code}
+                          </Text>
+                        </Card.Section>
 
-        <Divider />
+                        <Stack spacing="xs" mt="md" style={cardContentStyle}>
+                          <Group spacing="xs">
+                            <Badge
+                              style={badgeStyle}
+                              color="blue"
+                              variant="light"
+                            >
+                              Credits: {course.credit}
+                            </Badge>
+                            <Badge
+                              style={badgeStyle}
+                              color="grape"
+                              variant="light"
+                            >
+                              Max Seats: {course.max_seats}
+                            </Badge>
+                          </Group>
 
-        <Stack spacing="sm">
-          {courses.length > 0 ? (
-            courses.map((course) => (
-              <Card key={course.id} withBorder shadow="sm" p="sm">
-                <Group position="apart" align="flex-start">
-                  <Stack spacing={4}>
-                    <Text weight={600}>{course.name}</Text>
-                    <Text size="sm" color="dimmed">
-                      {course.code}
-                    </Text>
-                    <Group spacing="xs" mt={4}>
-                      <Badge color="blue">{course.credit} cr</Badge>
-                      {course.latest_version && <Badge color="green">Latest</Badge>}
-                    </Group>
-                  </Stack>
-                  <Button
-                    size="xs"
-                    variant="light"
-                    onClick={() => handleDownload(course.id)}
-                    loading={downloadLoading === course.id}
-                    style={{ alignSelf: "start" }}
-                  >
-                    Download
-                  </Button>
-                </Group>
-              </Card>
-            ))
-          ) : (
-            !loading && <Text color="dimmed" align="center">No courses to display.</Text>
-          )}
-        </Stack>
-      </Stack>
-    </Card>
+                          <Divider
+                            my="sm"
+                            label="Course Details"
+                            labelPosition="center"
+                          />
+
+                          <Group spacing="xs" grow>
+                            <Text size="sm" weight={500}>
+                              Hours:
+                            </Text>
+                            <Text size="sm">
+                              L:{course.lecture_hours} T:{course.tutorial_hours}{" "}
+                              P:{course.pratical_hours}
+                            </Text>
+                          </Group>
+
+                          <Group spacing="xs" grow>
+                            <Text size="sm" weight={500}>
+                              Prerequisites:
+                            </Text>
+                            <Text size="sm">
+                              {course.pre_requisits || "None"}
+                            </Text>
+                          </Group>
+
+                          <Text size="sm" mt="xs">
+                            <Text weight={500} component="span">
+                              Syllabus:{" "}
+                            </Text>
+                            {truncateSyllabus(course.syllabus)}
+                          </Text>
+                        </Stack>
+
+                        <Button
+                          fullWidth
+                          mt="md"
+                          leftIcon={<Download size={16} />}
+                          style={downloadButtonStyle}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(course.id);
+                          }}
+                          loading={
+                            downloadLoading && selectedCourse === course.id
+                          }
+                        >
+                          Download Grades
+                        </Button>
+                      </Card>
+                    </Grid.Col>
+                  ))}
+                </Grid>
+              </ScrollArea>
+            )}
+          </Paper>
+        </Container>
+      )}
+    </Transition>
   );
 }
+
+export default GradesDownloadPage;

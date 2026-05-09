@@ -7,7 +7,6 @@ import {
   Alert,
   NumberInput,
   Loader,
-  Select,
 } from "@mantine/core";
 import axios from "axios";
 import {
@@ -19,7 +18,6 @@ function AllocateCourses() {
   const [batch, setBatch] = useState("");
   const [semester, setSemester] = useState("");
   const [year, setYear] = useState("");
-  const [programmeType, setProgrammeType] = useState("UG");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,7 +39,7 @@ function AllocateCourses() {
     try {
       const response = await axios.post(
         checkAllocationRoute,
-        { batch, sem: semester, year, programme_type: programmeType },
+        { batch, sem: semester, year },
         {
           headers: {
             Authorization: `Token ${token}`,
@@ -65,9 +63,7 @@ function AllocateCourses() {
         setError(result.message);
       }
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || "Error checking allocation.";
-      setError(errorMessage);
+      setError("Error checking allocation.");
     }
 
     setLoading(false);
@@ -88,7 +84,7 @@ function AllocateCourses() {
     try {
       const response = await axios.post(
         startAllocationRoute,
-        { batch, semester, year, programme_type: programmeType },
+        { batch, semester, year },
         {
           headers: {
             Authorization: `Token ${token}`,
@@ -115,22 +111,10 @@ function AllocateCourses() {
         Allocate Courses
       </Text>
 
-      <Select
-        label="Programme Type"
-        placeholder="Select programme type"
-        value={programmeType}
-        onChange={setProgrammeType}
-        data={[
-          { value: "UG", label: "Undergraduate (UG)" },
-          { value: "PG", label: "Postgraduate (PG)" },
-        ]}
-        readOnly
-        mb="lg"
-      />
       <TextInput
         placeholder="Enter Batch"
         value={batch}
-        onChange={(e) => setBatch(e.currentTarget.value)}
+        onChange={(e) => setBatch(e.target.value)}
         mb="lg"
         label="Batch"
       />

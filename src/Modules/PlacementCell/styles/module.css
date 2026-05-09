@@ -1,0 +1,26 @@
+.placementCellPage {
+}
+
+.navContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tabsContainer {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin-left: 10px;
+}
+
+.tabsList {
+  display: flex;
+  gap: 0;
+}
+
+.tabContent {
+  margin-top: 20px;
+}

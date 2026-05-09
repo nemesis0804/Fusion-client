@@ -10,12 +10,15 @@ import {
   Box,
   Table,
   Alert,
-  LoadingOverlay
+  LoadingOverlay,
 } from "@mantine/core";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import "./styles/submit.css";
-import {validate_dean,validate_dean_submit} from "./routes/examinationRoutes"
+import {
+  validate_dean,
+  validate_dean_submit,
+} from "./routes/examinationRoutes";
 function ValidateDean() {
   const [courses, setCourses] = useState([]);
   const [years, setYears] = useState([]);
@@ -37,40 +40,42 @@ function ValidateDean() {
   const fetchCoursesAndYears = async () => {
     setLoading(true);
     setError("");
-    
+
     try {
       const token = localStorage.getItem("authToken"); // Assuming token is stored in localStorage
       const response = await axios.post(
         validate_dean,
-        { Role:userRole },
+        { Role: userRole },
         {
           headers: {
-            Authorization: `Token ${token}`
-          }
-        }
+            Authorization: `Token ${token}`,
+          },
+        },
       );
-      
+
       // Format courses for Select component
-      const formattedCourses = response.data.courses_info.map(course => ({
+      const formattedCourses = response.data.courses_info.map((course) => ({
         value: course.id.toString(),
-        label: `${course.name} - ${course.code}`
+        label: `${course.name} - ${course.code}`,
       }));
-      
+
       // Format years for Select component
-      const formattedYears = response.data.working_years.map(year => ({
+      const formattedYears = response.data.working_years.map((year) => ({
         value: year.working_year.toString(),
-        label: year.working_year.toString()
+        label: year.working_year.toString(),
       }));
-      
+
       setCourses(formattedCourses);
       setYears(formattedYears);
     } catch (err) {
       console.error("Error fetching courses and years:", err);
-      
+
       if (err.response && err.response.data && err.response.data.error) {
         setError(err.response.data.error);
       } else {
-        setError("Failed to load courses and academic years. Please try again.");
+        setError(
+          "Failed to load courses and academic years. Please try again.",
+        );
       }
     } finally {
       setLoading(false);
@@ -91,28 +96,24 @@ function ValidateDean() {
     setSuccess("");
     setMismatches([]);
     setShowMismatches(false);
-    
+
     try {
       const token = localStorage.getItem("authToken");
-      
+
       // Create form data
       const formData = new FormData();
       formData.append("Role", userRole);
       formData.append("course", course);
       formData.append("year", year);
       formData.append("csv_file", csvFile);
-      
-      const response = await axios.post(
-        validate_dean_submit,
-        formData,
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "multipart/form-data"
-          }
-        }
-      );
-      
+
+      const response = await axios.post(validate_dean_submit, formData, {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       // If there are mismatches, display them
       if (response.data.mismatches && response.data.mismatches.length > 0) {
         setMismatches(response.data.mismatches);
@@ -123,11 +124,13 @@ function ValidateDean() {
       }
     } catch (err) {
       console.error("Error submitting file:", err);
-      
+
       if (err.response && err.response.data && err.response.data.error) {
         setError(err.response.data.error);
       } else {
-        setError("An error occurred while validating the grades. Please try again.");
+        setError(
+          "An error occurred while validating the grades. Please try again.",
+        );
       }
     } finally {
       setLoading(false);
@@ -141,20 +144,20 @@ function ValidateDean() {
         borderRadius: "15px",
         padding: "0 20px",
         boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.15)",
+        // borderLeft: "10px solid #1E90FF",
         backgroundColor: "white",
-        position: "relative"
+        position: "relative",
       }}
     >
-      <LoadingOverlay visible={loading} />
-      
+      <LoadingOverlay visible={loading} overlayBlur={2} />
+
       <Paper p="md">
         <h1>Validate Grades</h1>
-        
+
         {error && (
-          <Alert 
-             
-            title="Error" 
-            color="red" 
+          <Alert
+            title="Error"
+            color="red"
             mb="md"
             withCloseButton
             onClose={() => setError("")}
@@ -162,12 +165,11 @@ function ValidateDean() {
             {error}
           </Alert>
         )}
-        
+
         {success && (
-          <Alert 
-             
-            title="Success" 
-            color="green" 
+          <Alert
+            title="Success"
+            color="green"
             mb="md"
             withCloseButton
             onClose={() => setSuccess("")}
@@ -204,14 +206,13 @@ function ValidateDean() {
           <FileInput
             label="Upload CSV File"
             placeholder="Click to upload CSV file"
-            
             value={csvFile}
             onChange={handleFileChange}
             accept=".csv"
             required
             clearable
           />
-          <small style={{ color: 'gray' }}>
+          <small style={{ color: "gray" }}>
             File must include columns: roll_no, grade, remarks
           </small>
         </Box>

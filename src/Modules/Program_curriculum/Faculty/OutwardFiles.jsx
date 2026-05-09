@@ -118,7 +118,6 @@ function OutwardFile() {
       try {
         const response = await fetchFacultyOutwardFilesData(uname, des);
         const data = await response.json();
-        console.log(data);
         const nonArchived = data.courseProposals.filter(
           (file) => !file.sender_archive,
         );
@@ -309,7 +308,7 @@ function OutwardFile() {
                           borderRight: "1px solid #d3d3d3",
                         }}
                       >
-                        {file.remarks || " "}
+                        {file.remarks}
                       </td>
                       <td
                         style={{

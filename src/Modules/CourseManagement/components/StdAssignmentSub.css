@@ -1,0 +1,75 @@
+.submission-container {
+  margin: 10px 3rem;
+  padding: 20px;
+  background-color: #ffffff; /* White background */
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Tab container and buttons */
+.tabContainer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Title */
+.title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #15abff; /* Light blue text */
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Form */
+.submission-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.innerhead {
+  display: flex;
+}
+
+/* Form Label */
+.form-label {
+  font-size: 1rem;
+  color: #333; /* Dark text */
+  font-weight: bold;
+}
+
+/* Form Input */
+.form-input,
+.file-input {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.form-input:focus,
+.file-input:focus {
+  border-color: #4a90e2; /* Highlight with light blue */
+}
+
+/* Submit Button */
+.submit-button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background-color: #15abff; /* Light blue background */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submit-button:hover {
+  background-color: #357ab8; /* Slightly darker blue on hover */
+}

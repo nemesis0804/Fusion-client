@@ -197,8 +197,8 @@ export default function WorkshopForm() {
                   label="Role"
                   placeholder="Select Role"
                   data={[
-                    { value: "Author", label: "Author" },
-                    { value: "Co-Author", label: "Co-Author" },
+                    { value: "Author", label: "Coordinator" },
+                    { value: "Co-Author", label: "Co-Coordinator" },
                   ]}
                   value={inputs.role}
                   onChange={(value) =>
@@ -292,7 +292,7 @@ export default function WorkshopForm() {
               <Grid.Col span={12}>
                 <TextInput
                   required
-                  label="Name"
+                  label="Event Name"
                   placeholder="Name"
                   value={inputs.name}
                   onChange={(e) =>

@@ -97,7 +97,7 @@ function Admin_replicate_curriculum_form({ existingData }) {
             // Set the programme value using the ID from the response
             programme: response.programme_id.toString(),
             workingCurriculum: response.working_curriculum || false,
-            versionNo: response.version ? parseFloat((parseFloat(response.version) + 0.1).toFixed(1)) : 1.0,
+            versionNo: response.version || 1.0,
             numSemesters: response.semesters ? response.semesters.length : 1,
             numCredits: response.num_credits || 0,
           });
@@ -211,9 +211,6 @@ function Admin_replicate_curriculum_form({ existingData }) {
   //   console.log(values);
   //   // Add your logic to handle the edited data submission here
   // };
-  const handleCancel = () => {
-    navigate("/programme_curriculum/acad_view_all_working_curriculums");
-  };
 
   return (
     <div
@@ -306,9 +303,6 @@ function Admin_replicate_curriculum_form({ existingData }) {
                   label="Curriculum Version No"
                   value={form.values.versionNo}
                   onChange={(value) => form.setFieldValue("versionNo", value)}
-                  step={0.1}
-                  precision={1}
-                  min={0.1}
                   required
                 />
 
@@ -330,11 +324,7 @@ function Admin_replicate_curriculum_form({ existingData }) {
               </Stack>
 
               <Group position="right" mt="lg">
-                <Button
-                  variant="outline"
-                  className="cancel-btn"
-                  onClick={handleCancel}
-                >
+                <Button variant="outline" className="cancel-btn">
                   Cancel
                 </Button>
                 <Button type="submit" className="submit-btn">

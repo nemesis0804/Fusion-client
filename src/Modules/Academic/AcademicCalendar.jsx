@@ -8,19 +8,15 @@ import {
   Group,
   TextInput,
   Loader,
-  FileInput,
-  Table,
 } from "@mantine/core";
+import { DatePickerInput } from "@mantine/dates";
 import axios from "axios";
-import { IconUpload } from "@tabler/icons-react";
+import FusionTable from "../../components/FusionTable";
 import {
   calendarRoute,
-  addCalendarRoute,
   editCalendarRoute,
+  addCalendarRoute,
   deleteCalendarRoute,
-  clearCalendarRoute,
-  exportCalendarRoute,
-  importCalendarRoute,
 } from "../../routes/academicRoutes";
 
 function AcademicCalendar() {
@@ -34,385 +30,278 @@ function AcademicCalendar() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [file, setFile] = useState(null);
 
-  // Fetch events
   useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchCalendarData = async () => {
       const token = localStorage.getItem("authToken");
-      if (!token) {
-        setError("Authentication required");
-        setLoading(false);
-        return;
-      }
+      if (!token) return console.error("No authentication token found!");
+
       try {
         const { data } = await axios.get(calendarRoute, {
           headers: { Authorization: `Token ${token}` },
         });
-        if (!mounted) return;
-        setEvents(
-          Array.isArray(data)
-            ? data.map((e) => ({
-                ...e,
-                from_date: e.from_date ? new Date(e.from_date) : null,
-                to_date: e.to_date ? new Date(e.to_date) : null,
-              }))
-            : []
-        );
-      } catch (err) {
-        if (mounted) setError("Failed to load events");
+
+        const parsedEvents = data.map((event) => ({
+          ...event,
+          from_date: new Date(event.from_date), // Parse date strings
+          to_date: new Date(event.to_date), // Parse date strings
+        }));
+
+        setEvents(parsedEvents);
+      } catch (error1) {
+        console.error("Error fetching calendar data:", error1);
+        setError("Failed to load events");
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
-    fetchData();
-    return () => {
-      mounted = false;
-    };
+
+    fetchCalendarData();
   }, [refreshTrigger]);
 
-  // Format dates for display
-  const formatDate = (d) =>
-    d
-      ? d.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "";
+  const columnNames = ["Description", "Start Date", "End Date", "Actions"];
 
-  // Open modals
-  const handleAdd = () => {
-    setError("");
-    setNewEvent({ description: "", from_date: null, to_date: null });
-    setAddModalOpen(true);
-  };
-  const handleEdit = (ev) => {
-    setError("");
-    setEditingEvent(ev);
+  // Formatting helpers
+  const formatDateTime = (date) =>
+    date?.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }) || "";
+
+  const handleEdit = (event) => {
+    setEditingEvent({
+      ...event,
+      from_date: event.from_date,
+      to_date: event.to_date,
+    });
   };
 
-  // Save edited event
   const handleSaveEdit = async () => {
     if (
       !editingEvent?.description ||
-      !editingEvent?.from_date ||
-      !editingEvent?.to_date
+      !editingEvent.from_date ||
+      !editingEvent.to_date
     ) {
-      return setError("Please fill all fields");
+      setError("Please fill all required fields");
+      return;
     }
-    setProcessing(true);
+
     try {
       const token = localStorage.getItem("authToken");
-      await axios.put(
-        editCalendarRoute,
-        {
-          ...editingEvent,
-          from_date: editingEvent.from_date.toISOString().slice(0, 10),
-          to_date: editingEvent.to_date.toISOString().slice(0, 10),
-        },
-        { headers: { Authorization: `Token ${token}` } }
+
+      const updatedEvent = {
+        ...editingEvent,
+        from_date: editingEvent.from_date.toLocaleDateString("en-CA"), // YYYY-MM-DD
+        to_date: editingEvent.to_date.toLocaleDateString("en-CA"), // YYYY-MM-DD
+      };
+      console.log(updatedEvent);
+
+      await axios.put(editCalendarRoute, updatedEvent, {
+        headers: { Authorization: `Token ${token}` },
+      });
+      updatedEvent.from_date = new Date(updatedEvent.from_date);
+      updatedEvent.to_date = new Date(updatedEvent.to_date);
+      setEvents(
+        events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)),
       );
       setEditingEvent(null);
-      setRefreshTrigger((t) => t + 1);
-    } catch {
+      setError("");
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (error1) {
+      console.error(error1);
       setError("Failed to update event");
-    } finally {
-      setProcessing(false);
     }
   };
 
-  // Create new event
   const handleAddEvent = async () => {
-    if (
-      !newEvent.description ||
-      !newEvent.from_date ||
-      !newEvent.to_date
-    ) {
-      return setError("Please fill all fields");
+    if (!newEvent.description || !newEvent.from_date || !newEvent.to_date) {
+      setError("Please fill all required fields");
+      return;
     }
-    setProcessing(true);
+
     try {
       const token = localStorage.getItem("authToken");
-      await axios.post(
-        addCalendarRoute,
-        {
-          ...newEvent,
-          from_date: newEvent.from_date.toISOString().slice(0, 10),
-          to_date: newEvent.to_date.toISOString().slice(0, 10),
-        },
-        { headers: { Authorization: `Token ${token}` } }
-      );
+
+      const eventToAdd = {
+        ...newEvent,
+        from_date: newEvent.from_date.toLocaleDateString("en-CA"), // YYYY-MM-DD
+        to_date: newEvent.to_date.toLocaleDateString("en-CA"), // YYYY-MM-DD
+      };
+
+      const { data } = await axios.post(addCalendarRoute, eventToAdd, {
+        headers: { Authorization: `Token ${token}` },
+      });
+
+      setEvents([...events, data]);
       setAddModalOpen(false);
-      setRefreshTrigger((t) => t + 1);
-    } catch {
+      setNewEvent({ description: "", from_date: null, to_date: null });
+      setError("");
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (error1) {
+      console.error(error1);
       setError("Failed to create event");
-    } finally {
-      setProcessing(false);
     }
   };
 
-  // Delete one event
-  const handleDelete = async (ev) => {
-    setProcessing(true);
+  const handleDelete = async (event) => {
     try {
       const token = localStorage.getItem("authToken");
       await axios.delete(deleteCalendarRoute, {
         headers: { Authorization: `Token ${token}` },
-        data: { id: ev.id },
+        data: { id: event.id },
       });
-      setRefreshTrigger((t) => t + 1);
-    } catch {
+      setRefreshTrigger((prev) => prev + 1); // Increment the trigger after successful delete
+    } catch (error1) {
+      console.error(error1);
       setError("Failed to delete event");
-    } finally {
-      setProcessing(false);
     }
   };
 
-  // Clear all
-  const handleClear = async () => {
-    setProcessing(true);
-    try {
-      const token = localStorage.getItem("authToken");
-      await axios.delete(clearCalendarRoute, {
-        headers: { Authorization: `Token ${token}` },
-      });
-      setRefreshTrigger((t) => t + 1);
-    } catch {
-      setError("Failed to clear calendar");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  // Export Excel
-  const handleExport = async () => {
-    setProcessing(true);
-    try {
-      const token = localStorage.getItem("authToken");
-      const res = await axios.get(exportCalendarRoute, {
-        headers: { Authorization: `Token ${token}` },
-        responseType: "blob",
-      });
-      const url = URL.createObjectURL(new Blob([res.data]));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "calendar.xlsx";
-      a.click();
-    } catch {
-      setError("Failed to export excel");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  // Import Excel
-  const handleFileUpload = async (f) => {
-    if (!f) return;
-    setProcessing(true);
-    try {
-      const token = localStorage.getItem("authToken");
-      const form = new FormData();
-      form.append("file", f);
-      await axios.post(importCalendarRoute, form, {
-        headers: {
-          Authorization: `Token ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      setFile(null);
-      setRefreshTrigger((t) => t + 1);
-    } catch {
-      setError("Failed to import excel");
-    } finally {
-      setProcessing(false);
-    }
-  };
+  const mappedEvents = events.map((event) => ({
+    Description: event.description,
+    "Start Date": formatDateTime(event.from_date),
+    "End Date": formatDateTime(event.to_date),
+    "Last Updated": formatDateTime(event.timestamp),
+    Actions: (
+      <Group spacing="xs">
+        <Button
+          variant="outline"
+          color="blue"
+          size="xs"
+          onClick={() => handleEdit(event)}
+        >
+          Edit
+        </Button>
+        <Button
+          variant="outline"
+          color="red"
+          size="xs"
+          onClick={() => handleDelete(event)}
+        >
+          Delete
+        </Button>
+      </Group>
+    ),
+  }));
 
   return (
     <Card shadow="sm" p="lg" radius="md" withBorder>
-      <Text size="lg" weight={700} mb="md" align="center" color="#3B82F6">
+      <Text
+        size="lg"
+        weight={700}
+        mb="md"
+        style={{ textAlign: "center", color: "#3B82F6" }}
+      >
         Academic Calendar Management
       </Text>
 
-      {/* Initial loader or error */}
       {loading ? (
-        <Group position="center" py="xl">
-          <Loader />
-        </Group>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
+          <Group position="center" py="xl">
+            <Loader variant="dots" />
+          </Group>
+        </div>
+      ) : error ? (
+        <Alert color="red">{error}</Alert>
       ) : (
         <>
-          {error && (
-            <Alert
-              color="red"
-              mb="md"
-              withCloseButton
-              onClose={() => setError("")}
+          <div style={{ overflowX: "auto" }}>
+            <FusionTable
+              columnNames={columnNames}
+              elements={mappedEvents}
+              width="100%"
+            />
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-start",
+              marginTop: "1rem",
+            }}
+          >
+            <Button
+              style={{ backgroundColor: "#4CBB17", color: "white" }}
+              onClick={() => setAddModalOpen(true)}
             >
-              {error}
-            </Alert>
-          )}
-
-          {/* Events table */}
-          <Table striped highlightOnHover>
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(events) && events.length ? (
-                events.map((ev) => (
-                  <tr key={ev.id}>
-                    <td>{ev.description}</td>
-                    <td>{formatDate(ev.from_date)}</td>
-                    <td>{formatDate(ev.to_date)}</td>
-                    <td>
-                      <Group spacing="xs">
-                        <Button
-                          variant="outline"
-                          size="xs"
-                          onClick={() => handleEdit(ev)}
-                          disabled={processing}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          color="red"
-                          size="xs"
-                          onClick={() => handleDelete(ev)}
-                          disabled={processing}
-                        >
-                          Delete
-                        </Button>
-                      </Group>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} align="center">
-                    No events found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-
-          {/* Action buttons */}
-          <Group mt="md">
-            <Button onClick={handleAdd} disabled={processing}>
               Add New Event
             </Button>
-            <Button
-              variant="outline"
-              color="red"
-              onClick={handleClear}
-              disabled={processing}
-            >
-              Clear Calendar
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              disabled={processing}
-            >
-              Export Excel
-            </Button>
-            <FileInput
-              placeholder="Import Excel"
-              accept=".xlsx,.xls"
-              value={file}
-              onChange={(f) => {
-                setFile(f);
-                handleFileUpload(f);
-              }}
-              icon={<IconUpload size={16} />}
-              disabled={processing}
-            />
-          </Group>
+          </div>
         </>
       )}
 
-      {/* Edit Modal */}
       <Modal
         opened={!!editingEvent}
         onClose={() => setEditingEvent(null)}
         title="Edit Event"
         size="lg"
       >
+        {error && (
+          <Alert color="red" mb="sm">
+            {error}
+          </Alert>
+        )}
+
         <TextInput
           label="Description"
           value={editingEvent?.description || ""}
           onChange={(e) =>
-            setEditingEvent({
-              ...editingEvent,
-              description: e.target.value,
-            })
+            setEditingEvent({ ...editingEvent, description: e.target.value })
           }
           mb="md"
           required
-          disabled={processing}
         />
-        <TextInput
+
+        <DatePickerInput
           label="Start Date"
-          type="date"
-          value={
-            editingEvent?.from_date
-              ? editingEvent.from_date.toISOString().slice(0, 10)
-              : ""
-          }
-          onChange={(e) =>
-            setEditingEvent({
-              ...editingEvent,
-              from_date: e.target.value ? new Date(e.target.value) : null,
-            })
+          value={editingEvent?.from_date}
+          onChange={(date) =>
+            setEditingEvent({ ...editingEvent, from_date: date })
           }
           mb="md"
+          clearable
           required
-          disabled={processing}
         />
-        <TextInput
+
+        <DatePickerInput
           label="End Date"
-          type="date"
-          value={
-            editingEvent?.to_date
-              ? editingEvent.to_date.toISOString().slice(0, 10)
-              : ""
-          }
-          onChange={(e) =>
-            setEditingEvent({
-              ...editingEvent,
-              to_date: e.target.value ? new Date(e.target.value) : null,
-            })
+          value={editingEvent?.to_date}
+          onChange={(date) =>
+            setEditingEvent({ ...editingEvent, to_date: date })
           }
           mb="md"
+          clearable
           required
-          disabled={processing}
         />
+
         <Group position="right" mt="lg">
-          <Button onClick={handleSaveEdit} disabled={processing}>
-            {processing ? "Saving…" : "Save Changes"}
+          <Button color="blue" onClick={handleSaveEdit}>
+            Save Changes
           </Button>
         </Group>
       </Modal>
 
-      {/* Add Modal */}
       <Modal
         opened={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         title="Add New Event"
         size="lg"
-        overlayOpacity={0.3}
       >
+        {error && (
+          <Alert color="red" mb="sm">
+            {error}
+          </Alert>
+        )}
+
         <TextInput
           label="Description"
           value={newEvent.description}
@@ -421,39 +310,29 @@ function AcademicCalendar() {
           }
           mb="md"
           required
-          disabled={processing}
         />
-        <TextInput
+
+        <DatePickerInput
           label="Start Date"
-          type="date"
-          value={newEvent.from_date?.toISOString().slice(0, 10) || ""}
-          onChange={(e) =>
-            setNewEvent({
-              ...newEvent,
-              from_date: e.target.value ? new Date(e.target.value) : null,
-            })
-          }
+          value={newEvent.from_date}
+          onChange={(date) => setNewEvent({ ...newEvent, from_date: date })}
           mb="md"
+          clearable
           required
-          disabled={processing}
         />
-        <TextInput
+
+        <DatePickerInput
           label="End Date"
-          type="date"
-          value={newEvent.to_date?.toISOString().slice(0, 10) || ""}
-          onChange={(e) =>
-            setNewEvent({
-              ...newEvent,
-              to_date: e.target.value ? new Date(e.target.value) : null,
-            })
-          }
+          value={newEvent.to_date}
+          onChange={(date) => setNewEvent({ ...newEvent, to_date: date })}
           mb="md"
+          clearable
           required
-          disabled={processing}
         />
+
         <Group position="right" mt="lg">
-          <Button onClick={handleAddEvent} disabled={processing}>
-            {processing ? "Adding…" : "Add Event"}
+          <Button color="green" onClick={handleAddEvent}>
+            Add Event
           </Button>
         </Group>
       </Modal>
