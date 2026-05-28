@@ -7,7 +7,6 @@ import {
   Avatar,
   Burger,
   Flex,
-  Indicator,
   Popover,
   Group,
   Stack,
@@ -15,7 +14,9 @@ import {
   Button,
   Select,
   Box,
+  Badge,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 // import { useQueryClient } from "@tanstack/react-query";
 import PropTypes from "prop-types";
 import { notifications } from "@mantine/notifications";
@@ -31,12 +32,22 @@ function Header({ opened, toggleSidebar }) {
   const username = useSelector((state) => state.user.username);
   const roles = useSelector((state) => state.user.roles);
   const role = useSelector((state) => state.user.role);
+  const badges = useSelector((state) => state.user.totalNotifications);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   // const queryclient = useQueryClient();
+  const isMobile = useMediaQuery("(max-width: 500px)");
 
   const handleRoleChange = async (newRole) => {
+    if (!newRole || newRole === role) return;
+
+    console.log("[DEBUG] handleRoleChange called with:", newRole);
     const token = localStorage.getItem("authToken");
+
+    dispatch(setRole(newRole));
+    dispatch(setCurrentAccessibleModules());
+
     try {
       const response = await axios.patch(
         updateRoleRoute,
@@ -62,12 +73,19 @@ function Header({ opened, toggleSidebar }) {
         ),
         color: "green",
       });
-      console.log(response.data.message);
-      dispatch(setRole(newRole));
-      dispatch(setCurrentAccessibleModules());
-      navigate('/dashboard')
+      console.log("[DEBUG] PATCH response:", response.data);
+      navigate("/dashboard");
     } catch (error) {
-      console.error("Error updating last selected role:", error.response.data);
+      console.error(
+        "[DEBUG] Error updating last selected role:",
+        error?.response?.data || error,
+      );
+      notifications.show({
+        title: "Role changed locally",
+        message: "Could not save the selected role for your next session.",
+        color: "yellow",
+      });
+      navigate("/dashboard");
     }
   };
   const handleLogout = async () => {
@@ -99,20 +117,9 @@ function Header({ opened, toggleSidebar }) {
   };
 
   return (
-    <Flex
-      bg="#F5F7F8"
-      justify="space-between"
-      align="center"
-      pl="sm"
-      h="64px" // Height has already been set in layout.jsx but had to set the height here as well for properly aligning the avatar
-    >
-      <Box>
-        <Burger
-          opened={opened}
-          onClick={toggleSidebar}
-          hiddenFrom="sm"
-          size="sm"
-        />
+    <Flex align="center" h="100%" w="100%" px={{ base: "sm", md: "lg" }}>
+      <Box hiddenFrom="sm" mr="sm">
+        <Burger opened={opened} onClick={toggleSidebar} size="sm" />
       </Box>
       <Flex
         justify={{ base: "space-between" }}
@@ -141,9 +148,19 @@ function Header({ opened, toggleSidebar }) {
             onChange={handleRoleChange}
             placeholder="Role"
           />
-          <Indicator>
+          <Flex align="flex-start" onClick={() => navigate("/dashboard")}>
             <Bell color="orange" size="32px" cursor="pointer" />
-          </Indicator>
+            {badges > 0 && (
+              <Badge
+                color={badges > 0 ? "blue" : "grey"}
+                size={isMobile ? "xs" : "sm"}
+                w={isMobile ? "sm" : "md"}
+                p={isMobile ? 0 : 2}
+              >
+                {badges}
+              </Badge>
+            )}
+          </Flex>
           <Popover
             opened={popoverOpened}
             onChange={setPopoverOpened}

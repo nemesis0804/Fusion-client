@@ -1,5 +1,12 @@
 import { host } from "../globalRoutes";
 
+export const placementCellRoute = "/placement-cell";
+export const placementCellApplyRoute = "apply-placement";
+export const placementCellViewRoute = "view";
+export const placementCellTimelineRoute = "timeline";
+export const placementCellOfferDetailRoute = "offer/:offerId";
+export const placementCellApplicationDetailRoute = "application/:applicationId";
+
 export const addPlacementEventForm = `${host}/placement/api/placement/`;
 export const fetchApplicationsRoute = `${host}/placement/api/student-applications/`;
 export const handleStatusChangeRoute = `${host}/placement/api/student-applications/`;

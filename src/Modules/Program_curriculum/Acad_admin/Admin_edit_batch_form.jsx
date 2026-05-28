@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Select,
-  MultiSelect,
   NumberInput,
   Checkbox,
   Button,
@@ -10,28 +9,27 @@ import {
   Container,
   Stack,
 } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
 import { useForm } from "@mantine/form";
 import axios from "axios";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom"; // For handling URL parameters and navigation
 import {
   fetchDisciplines,
   fetchBatchName,
   fetchGetUnlinkedCurriculum,
-  fetchBatchData,
+  fetchBatchData, // Add this function to fetch batch data by ID
 } from "../api/api";
 import { host } from "../../../routes/globalRoutes";
 
 function Admin_edit_batch_form() {
   const [searchParams] = useSearchParams();
-  const batchId = searchParams.get("batch");
+  const batchId = searchParams.get("batch"); // Get the batch ID from the URL
   const curriculumId = searchParams.get("curriculum_id");
-  const navigate = useNavigate();
-  const [batchNames, setBatchNames] = useState([]);
-  const [disciplines, setDisciplines] = useState([]);
-  const [unlinkedCurriculums, setUnlinkedCurriculums] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const navigate = useNavigate(); // For navigation after form submission
+  const [batchNames, setBatchNames] = useState([]); // State for batch names
+  const [disciplines, setDisciplines] = useState([]); // State for disciplines
+  const [unlinkedCurriculums, setUnlinkedCurriculums] = useState([]); // State for unlinked curriculums
+  const [loading, setLoading] = useState(true); // State for loading
+  const [error, setError] = useState(null); // State for error handling
 
   const form = useForm({
     initialValues: {
@@ -40,104 +38,72 @@ function Admin_edit_batch_form() {
       batchYear: 2024,
       disciplineBatch: "",
       runningBatch: false,
-      totalSeats: 0,
-    },
-    validate: {
-      batchName: (value) => (!value ? "Batch name is required" : null),
-      discipline: (value) => (!value ? "Discipline is required" : null),
-      disciplineBatch: (value) => (!value ? "Curriculum is required" : null),
     },
   });
 
+  // Fetch batch names, disciplines, unlinked curriculums, and existing batch data on component mount
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Fetch batch names
         const batchData = await fetchBatchName();
         setBatchNames(batchData.choices);
 
+        // Fetch disciplines
         const disciplineData = await fetchDisciplines();
         setDisciplines(disciplineData);
 
+        // Fetch unlinked curriculums
         const unlinkedCurriculumData = await fetchGetUnlinkedCurriculum();
         setUnlinkedCurriculums(unlinkedCurriculumData);
-        
+        console.log(unlinkedCurriculums);
+        // Fetch existing batch data
         const existingBatchData = await fetchBatchData(batchId);
-        
+        console.log(existingBatchData.curriculum);
         if (existingBatchData.curriculum) {
           setUnlinkedCurriculums((prevUnlinkedCurriculums) => [
             ...prevUnlinkedCurriculums,
             ...existingBatchData.curriculum.map((curriculum) => curriculum),
           ]);
         }
-        
-        // Extract curriculum IDs from the batch data
-        const curriculumIds = [];
-        if (existingBatchData.curriculum && Array.isArray(existingBatchData.curriculum)) {
-          // If batch has multiple curricula, take the first one for single selection
-          curriculumIds.push(existingBatchData.curriculum[0].id.toString());
-        } else if (existingBatchData.batch.curriculum_id) {
-          // If batch has single curriculum
-          curriculumIds.push(existingBatchData.batch.curriculum_id.toString());
-        } else if (curriculumId) {
-          // Fallback to URL parameter
-          curriculumIds.push(curriculumId);
-        }
-        
+        console.log(unlinkedCurriculums);
         form.setValues({
-          batchName: existingBatchData.batch.name || "",
+          batchName: existingBatchData.batch.name,
           discipline: existingBatchData.batch.discipline.toString(),
           batchYear: existingBatchData.batch.year,
-          disciplineBatch: curriculumIds.length > 0 ? curriculumIds[0] : "",
+          disciplineBatch: existingBatchData.batch.curriculum_id
+            ? existingBatchData.batch.curriculum_id.toString()
+            : curriculumId || "",
           runningBatch: existingBatchData.batch.running_batch,
-          totalSeats: existingBatchData.batch.total_seats || 0,
         });
       } catch (err) {
-        setError("Failed to load data.");
-        notifications.show({
-          title: "Error",
-          message: "Failed to load batch data. Please refresh the page.",
-          color: "red",
-          autoClose: 4000,
-        });
+        setError("Failed to load data."); // Handle errors
       } finally {
-        setLoading(false);
+        setLoading(false); // Stop the loader
       }
     };
 
-    loadData();
+    loadData(); // Fetch data on component mount
   }, [batchId]);
-
-  // Handler for batch name change
-  const handleBatchNameChange = (value) => {
-    form.setFieldValue("batchName", value);
-    
-    // Clear curriculum selection when batch name changes
-    form.setFieldValue("disciplineBatch", "");
-  };
+  console.log(unlinkedCurriculums);
 
   const handleSubmit = async () => {
     try {
       localStorage.setItem("AdminBatchesCachechange", "true");
       const token = localStorage.getItem("authToken");
-      
       if (!token) {
         throw new Error("Authorization token is required");
       }
-      
-      const curriculumData = form.values.disciplineBatch || "";
-      
       const payload = {
         batch_name: form.values.batchName,
-        discipline: parseInt(form.values.discipline, 10),
-        batchYear: parseInt(form.values.batchYear, 10),
+        discipline: form.values.discipline,
+        batchYear: form.values.batchYear,
+        disciplineBatch: form.values.disciplineBatch || "", // Send empty string if no curriculum is selected
         runningBatch: form.values.runningBatch,
-        total_seats: parseInt(form.values.totalSeats, 10),
-        curriculum: curriculumData ? parseInt(curriculumData, 10) : null, 
-        disciplineBatch: curriculumData ? parseInt(curriculumData, 10) : null
       };
-      
+      console.log(payload);
       const response = await axios.put(
-        `${host}/programme_curriculum/api/admin_edit_batch/${batchId}/`,
+        `${host}/programme_curriculum/api/admin_edit_batch/${batchId}/`, // Use PUT request for editing
         payload,
         {
           headers: {
@@ -145,52 +111,15 @@ function Admin_edit_batch_form() {
           },
         },
       );
-      
+      console.log(response);
       if (response.data.message) {
-        notifications.show({
-          title: '✅ Success',
-          message: 'Batch updated successfully!',
-          color: 'green',
-          autoClose: 4000,
-          style: {
-            backgroundColor: '#d4edda',
-            borderColor: '#c3e6cb',
-            color: '#155724',
-          },
-        });
-        
-        // Clear curriculum cache to force refresh of curriculum-batch relationships
-        localStorage.removeItem("AdminCurriculumsCache");
-        localStorage.removeItem("AdminCurriculumsTimestamp");
-        localStorage.setItem("AdminCurriculumsCachechange", "true");
-        
-        navigate("/programme_curriculum/admin_batches/");
+        alert("Batch updated successfully!");
+        navigate("/programme_curriculum/admin_batches/"); // Redirect to batches page
       } else {
         throw new Error(response.data.message || "Failed to update batch");
       }
     } catch (err) {
-      
-      let errorMessage = 'Failed to update batch';
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      notifications.show({
-        title: '❌ Error',
-        message: errorMessage,
-        color: 'red',
-        autoClose: 5000,
-        style: {
-          backgroundColor: '#f8d7da',
-          borderColor: '#f5c6cb',
-          color: '#721c24',
-        },
-      });
-      setError(errorMessage);
+      setError(err.message);
     }
   };
 
@@ -226,6 +155,7 @@ function Admin_edit_batch_form() {
             flex: 4,
           }}
         >
+          {/* Form Section */}
           <div style={{ flex: 4 }}>
             <form
               onSubmit={form.onSubmit(handleSubmit)}
@@ -241,15 +171,17 @@ function Admin_edit_batch_form() {
                   Edit Batch Form
                 </Text>
 
+                {/* Batch Name Dropdown */}
                 <Select
                   label="Batch Name"
                   placeholder="-- Select Batch Name --"
                   data={batchNames}
                   value={form.values.batchName}
-                  onChange={handleBatchNameChange}
+                  onChange={(value) => form.setFieldValue("batchName", value)}
                   required
                 />
 
+                {/* Discipline Dropdown */}
                 <Select
                   label="Select Discipline"
                   placeholder="-- Select Discipline --"
@@ -280,8 +212,6 @@ function Admin_edit_batch_form() {
                   onChange={(value) =>
                     form.setFieldValue("disciplineBatch", value)
                   }
-                  searchable
-                  clearable
                 />
 
                 <Checkbox
@@ -293,15 +223,6 @@ function Admin_edit_batch_form() {
                       event.currentTarget.checked,
                     )
                   }
-                />
-
-                <NumberInput
-                  label="Total Seats"
-                  placeholder="Enter total number of seats"
-                  value={form.values.totalSeats}
-                  onChange={(value) => form.setFieldValue("totalSeats", value)}
-                  min={0}
-                  required
                 />
               </Stack>
 
@@ -321,6 +242,37 @@ function Admin_edit_batch_form() {
               </Group>
             </form>
           </div>
+
+          {/* Right Panel Buttons */}
+          {/* <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-start",
+            }}
+          >
+            <Group spacing="md" direction="column" style={{ width: "100%" }}>
+              <Link
+                to="/programme_curriculum/acad_admin_add_curriculum_form"
+                style={{ textDecoration: "none" }}
+              >
+                <Button className="right-btn-batch">Add Curriculum</Button>
+              </Link>
+              <Link
+                to="/programme_curriculum/acad_admin_add_batch_form"
+                style={{ textDecoration: "none" }}
+              >
+                <Button className="right-btn-batch">Add Another Batch</Button>
+              </Link>
+              <Link
+                to="/programme_curriculum/acad_admin_add_discipline_form"
+                style={{ textDecoration: "none" }}
+              >
+                <Button className="right-btn-batch">Add Discipline</Button>
+              </Link>
+            </Group>
+          </div> */}
         </div>
       </Container>
 

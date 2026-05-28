@@ -31,10 +31,10 @@ function VisitsMaster({ setBreadCrumbItems }) {
     { title: "Patent", component: <ViewPatent /> },
     { title: "PG Thesis", component: <ViewPGThesis /> },
     { title: "PhD Thesis", component: <ViewPhDThesis /> },
-    { title: "Events", component: <ViewEvents /> },
+    { title: "Events Organised", component: <ViewEvents /> },
     { title: "Foreign Visits", component: <ViewForeignVisits /> },
     { title: "Indian Visits", component: <ViewIndianVisits /> },
-    { title: "Con/Sym", component: <ViewConSym /> },
+    { title: "Events Attended", component: <ViewConSym /> },
     { title: "Journal", component: <ViewJournal /> },
     { title: "Books", component: <ViewBooks /> },
   ];

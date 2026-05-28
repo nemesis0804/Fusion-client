@@ -31,7 +31,7 @@ export default function Nav() {
   const activeLinkStyle = {
     backgroundColor: "#15abff13", // Light blue background (same as Dashboard)
     color: "#15abff", // Blue text (same as Dashboard)
-     // Bold text (same as Dashboard)
+    // Bold text (same as Dashboard)
     borderBottom: "2px solid #15abff", // Blue bottom border
     borderBottomLeftRadius: "4px", // Curved bottom-left corner
     borderBottomRightRadius: "4px", // Curved bottom-right corner
@@ -58,18 +58,18 @@ export default function Nav() {
     {
       title: "Submit",
       path: "/examination/submit-grades-prof",
-      roles: ["Professor","Assistant Professor","Associate Professor"],
+      roles: ["Professor", "Assistant Professor", "Associate Professor"],
     },
     {
       title: "Verify",
       path: "/examination/verify-grades",
       roles: ["acadadmin"],
     },
-    // {
-    //   title: "Announcement",
-    //   path: "/examination/announcement",
-    //   roles: ["acadadmin"],
-    // },
+    {
+      title: "Announcement",
+      path: "/examination/announcement",
+      roles: ["acadadmin"],
+    },
     {
       title: "Transcript",
       path: "/examination/generate-transcript",
@@ -84,14 +84,10 @@ export default function Nav() {
     {
       title: "Download Grades",
       path: "/examination/download-grades-prof",
-      roles: ["Professor","Assistant Professor","Associate Professor"],
+      roles: ["Professor", "Assistant Professor", "Associate Professor"],
     },
-    
-    { title: "Result", path: "/examination/result", roles: ["student"] },
 
-    { title: "Announce Result", path: "/examination/result-announcement", roles: ["acadadmin", "Dean Academic"] },
-    { title: "Grade Status", path: "/examination/grade-status", roles: ["acadadmin", "Dean Academic"] },
-    { title: "Grade Summary", path: "/examination/grade-summary", roles: ["acadadmin", "Dean Academic"] },
+    { title: "Result", path: "/examination/result", roles: ["Student"] },
   ];
 
   // Filter tabs based on user role

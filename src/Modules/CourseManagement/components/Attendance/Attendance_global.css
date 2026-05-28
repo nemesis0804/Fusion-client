@@ -1,0 +1,14 @@
+/* Attendance.css */
+.attendance-container {
+    margin-top: 2rem;
+  }
+  
+  .attendance-card {
+    max-width: 700px;
+    width: 100%;
+  }
+  
+  .attendance-tabs {
+    width: 100%;
+  }
+  

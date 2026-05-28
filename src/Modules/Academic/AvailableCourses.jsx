@@ -20,6 +20,7 @@ function AvailableCourses() {
             Authorization: `Token ${token}`,
           },
         });
+        console.log(response.data);
         setCourses(response.data.courses_list); // Set courses from API response
       } catch (error) {
         console.error("Error fetching courses:", error);

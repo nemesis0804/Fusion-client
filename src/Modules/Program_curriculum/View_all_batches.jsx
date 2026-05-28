@@ -66,12 +66,17 @@ function Batches() {
   const applyFilters = (data) => {
     return data.filter((batch) => {
       return (
-        (filter.name==="" || batch.name.toLowerCase().includes(filter.name.toLowerCase())) &&
-        (filter.discipline==="" || batch.discipline
-          .toLowerCase()
-          .includes(filter.discipline.toLowerCase())) &&
-        (filter.year==="" || batch.year.toString().includes(filter.year)) &&
-        (filter.curriculum==="" || batch.curriculum.toLowerCase().includes(filter.curriculum.toLowerCase()))
+        (filter.name === "" ||
+          batch.name.toLowerCase().includes(filter.name.toLowerCase())) &&
+        (filter.discipline === "" ||
+          batch.discipline
+            .toLowerCase()
+            .includes(filter.discipline.toLowerCase())) &&
+        (filter.year === "" || batch.year.toString().includes(filter.year)) &&
+        (filter.curriculum === "" ||
+          batch.curriculum
+            .toLowerCase()
+            .includes(filter.curriculum.toLowerCase()))
       );
     });
   };
@@ -223,7 +228,7 @@ function Batches() {
                         }}
                       >
                         <Link
-                          to={`/programme_curriculum/stud_curriculum_view/${batch.curriculumId || batch.curriculum_id}`}
+                          to={`/programme_curriculum/stud_curriculum_view/${batch.id}`}
                           style={{
                             color: "#3498db",
                             textDecoration: "none",

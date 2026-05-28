@@ -50,8 +50,6 @@ export default function SemesterInfo() {
 
   // console.log(semcourseSlots)
   const handleDeleteCourseSlot = async () => {
-    const cacheChangeKey = `CurriculumCacheChange_${curriculumId}`;
-      localStorage.setItem(cacheChangeKey, "true");
     if (!slotToDelete) return; // Add safety check
 
     try {
@@ -187,12 +185,12 @@ export default function SemesterInfo() {
                   borderBottom: "1px solid #d3d3d3",
                 }}
               >
-                <Link
-                  to={`/programme_curriculum/admin_course/${course.id}`}
+                <a
+                  href={`/programme_curriculum/admin_course/${course.id}`}
                   style={{ textDecoration: "none" }}
                 >
                   {course.code}
-                </Link>
+                </a>
               </td>
               <td
                 style={{
@@ -225,8 +223,8 @@ export default function SemesterInfo() {
                   borderBottom: "1px solid #d3d3d3",
                 }}
               >
-                <Link
-                  to={`/programme_curriculum/acad_admin_edit_course_form/${course.id}`}
+                <a
+                  href={`/programme_curriculum/acad_admin_edit_course_form/${course.id}`}
                 >
                   <Button
                     variant="outline"
@@ -236,14 +234,14 @@ export default function SemesterInfo() {
                   >
                     Edit
                   </Button>
-                </Link>
+                </a>
               </td>
             </tr>
           ))}
           <tr>
             <td colSpan="4" style={{ textAlign: "right", padding: "10px" }}>
-              <Link
-                to={`/programme_curriculum/admin_edit_course_slot_form/${slot.id}`}
+              <a
+                href={`/programme_curriculum/admin_edit_course_slot_form/${slot.id}`}
               >
                 <Button
                   variant="solid"
@@ -253,7 +251,7 @@ export default function SemesterInfo() {
                 >
                   Edit Slot
                 </Button>
-              </Link>
+              </a>
               <Button
                 variant="solid"
                 color="red"

@@ -1,6 +1,13 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom"; // Adjust the import path as needed
-import { Breadcrumbs, Anchor, Group, Text, Switch, Button, Textarea } from "@mantine/core";
+import {
+  Breadcrumbs,
+  Anchor,
+  Group,
+  Text,
+  Switch,
+  Button,
+  Textarea,
+} from "@mantine/core";
 
 function InstigateSemesterForm() {
   const [startSemester, setStartSemester] = useState("");
@@ -18,15 +25,15 @@ function InstigateSemesterForm() {
     });
   };
 
-  // const breadcrumbItems = [
-  //   { title: "Program and Curriculum", href: "#" },
-  //   { title: "Curriculums", href: "#" },
-  //   { title: "CSE UG Curriculum", href: "#" },
-  // ].map((item, index) => (
-  //   <Link to={item.href} key={index}>
-  //     {item.title}
-  //   </Link>
-  // ));
+  const breadcrumbItems = [
+    { title: "Program and Curriculum", href: "#" },
+    { title: "Curriculums", href: "#" },
+    { title: "CSE UG Curriculum", href: "#" },
+  ].map((item, index) => (
+    <Anchor href={item.href} key={index}>
+      {item.title}
+    </Anchor>
+  ));
 
   return (
     <div style={containerStyle}>
@@ -43,9 +50,9 @@ function InstigateSemesterForm() {
       <div style={formContainerStyle}>
         {/* Heading for Instigate Form */}
         <h1 style={mainHeadingStyle}>Instigate Semester Form</h1>
-        
+
         <h2 style={headerStyle}>CSE UG Curriculum v1.0, sem-1</h2>
-        
+
         <form onSubmit={handleSubmit} style={formStyle}>
           <div style={formRowStyle}>
             <div style={formGroupStyle}>
@@ -129,7 +136,6 @@ const formContainerStyle = {
   maxWidth: "70vw", // Optional: Restrict max width
   margin: "20px 0", // Adjust top-bottom margin
   boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-
 };
 
 const mainHeadingStyle = {
@@ -182,14 +188,13 @@ const checkboxStyle = {
 const textareaStyle = {
   padding: "10px",
   borderRadius: "4px",
-  // border: "1px solid #ccc",  
+  // border: "1px solid #ccc",
   height: "80px",
-  margin:'0 0vw 0 -0.75vw'
+  margin: "0 0vw 0 -0.75vw",
 };
 
 const buttonContainerStyle = {
   display: "flex",
-  
 };
 
 const cancelButtonStyle = {
@@ -198,7 +203,7 @@ const cancelButtonStyle = {
   borderRadius: "4px",
   border: "none",
   cursor: "pointer",
-  margin:'0 2vw 0 0vw'
+  margin: "0 2vw 0 0vw",
 };
 
 const submitButtonStyle = {

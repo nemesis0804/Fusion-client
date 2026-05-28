@@ -2,8 +2,8 @@ import { Flex, Button, Tabs, Text } from "@mantine/core";
 import { CaretCircleLeft, CaretCircleRight } from "@phosphor-icons/react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
 import classes from "../../Dashboard/Dashboard.module.css";
+import { useSelector } from "react-redux";
 
 function BreadcrumbTabsAcadadmin() {
   const role = useSelector((state) => state.user.role);
@@ -22,7 +22,7 @@ function BreadcrumbTabsAcadadmin() {
 
         // If storedRole exists and is different (role changed), redirect to first URL
         if (storedRole && storedRole !== role) {
-          navigate("/dashboard");
+          navigate(breadcrumbItems[0].url);
         }
       }
     }
@@ -43,10 +43,6 @@ function BreadcrumbTabsAcadadmin() {
     {
       title: "Course Instructor",
       url: "/programme_curriculum/admin_course_instructor",
-    },
-    {
-      title: "Upcoming Batches",
-      url: "/programme_curriculum/admin_upcoming_batches",
     },
   ];
 

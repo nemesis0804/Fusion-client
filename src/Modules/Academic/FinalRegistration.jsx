@@ -7,8 +7,6 @@ import {
   FileInput,
   Button,
   Grid,
-  Loader,
-  Alert,
 } from "@mantine/core";
 import FusionTable from "../../components/FusionTable";
 import {
@@ -21,8 +19,6 @@ const inputStyle = { width: "100%" };
 function FinalRegistration() {
   const [courses, setCourses] = useState([]);
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [paymentDetails, setPaymentDetails] = useState({
     semester: "",
     mode: "",
@@ -34,14 +30,15 @@ function FinalRegistration() {
     deposit_date: "",
     utr_number: "",
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        const token = localStorage.getItem("authToken");
-        if (!token) throw new Error("No token found");
-
+        const token = localStorage.getItem("authToken"); // Get token from local storage
+        if (!token) {
+          throw new Error("No token found"); // Handle the case where the token is not available
+        }
         const response = await fetch(finalRegistrationPageRoute, {
           method: "GET",
           headers: {
@@ -51,21 +48,23 @@ function FinalRegistration() {
         const data = await response.json();
 
         if (data.final_registration_flag) {
-          setMessage("You have already done final registration for next semester.");
+          setMessage(
+            "You have already done final registration for next semester.",
+          );
         } else if (!data.frd) {
-          setMessage("Final Registration has not yet started for the next semester.");
+          setMessage(
+            "Final Registration has not yet started for the next semester.",
+          );
         } else {
           setCourses(data.final_registration || []);
           setPaymentDetails((prev) => ({
             ...prev,
-            semester: data.final_registration?.[0]?.semester_id?.id || 1,
+            semester: data.final_registration[0].semester_id.id,
           }));
         }
       } catch (error) {
         console.error("Error fetching registration data:", error);
         setMessage("Failed to fetch registration data.");
-      } finally {
-        setLoading(false);
       }
     };
     fetchData();
@@ -76,22 +75,21 @@ function FinalRegistration() {
   };
 
   const handleSubmit = async () => {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("authToken"); // Get token from local storage
     if (!token) {
-      alert("No token found");
-      return;
+      throw new Error("No token found"); // Handle the case where the token is not available
     }
-
     const formData = new FormData();
     Object.keys(paymentDetails).forEach((key) => {
       if (paymentDetails[key]) formData.append(key, paymentDetails[key]);
     });
 
-    setLoading(true);
     try {
       const response = await fetch(finalRegistrationRoute, {
         method: "POST",
-        headers: { Authorization: `Token ${token}` },
+        headers: {
+          Authorization: `Token ${token}`,
+        },
         body: formData,
       });
       const result = await response.json();
@@ -100,37 +98,23 @@ function FinalRegistration() {
     } catch (error) {
       console.error("Error submitting form:", error);
       alert("Failed to submit registration");
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (loading) {
+  if (message) {
     return (
       <Card shadow="sm" p="lg" radius="md" withBorder>
-        <div
-          style={{
-            height: "200px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+        <Text
+          size="lg"
+          weight={700}
+          mb="md"
+          style={{ textAlign: "center", color: "#FF0000" }}
         >
-          <Loader size="lg" color="blue" />
-        </div>
+          {message}
+        </Text>
       </Card>
     );
   }
-
-  if (message) {
-    return (
-        <Alert color="yellow"
-        >
-          {message}
-        </Alert>
-    );
-  }
-
   const mappedCourses = courses.map((course) => ({
     "Course Code": course.course_id?.code || "N/A",
     "Course Name": course.course_id?.name || "N/A",
@@ -143,6 +127,7 @@ function FinalRegistration() {
     (sum, course) => sum + (course.course_id?.credit || 0),
     0,
   );
+  console.log(courses, mappedCourses);
 
   return (
     <Card shadow="sm" p="lg" radius="md" withBorder>
@@ -221,6 +206,7 @@ function FinalRegistration() {
               placeholder="Choose File"
               accept="application/pdf"
               onChange={(file) => handleInputChange("fee_receipt", file)}
+              buttonLabel="Browse"
               style={inputStyle}
             />
           </Grid.Col>
@@ -266,13 +252,7 @@ function FinalRegistration() {
             />
           </Grid.Col>
         </Grid>
-        <Button
-          color="blue"
-          fullWidth
-          mt="md"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
+        <Button color="blue" fullWidth mt="md" onClick={handleSubmit}>
           Register
         </Button>
       </Card>

@@ -47,7 +47,7 @@ FusionTable.propTypes = {
   columnNames: PropTypes.arrayOf(PropTypes.string).isRequired,
   elements: PropTypes.arrayOf(
     PropTypes.objectOf(
-      PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.element, PropTypes.node]),
+      PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     ),
   ).isRequired,
   headerBgColor: PropTypes.string, // Background color of the table header in hex format

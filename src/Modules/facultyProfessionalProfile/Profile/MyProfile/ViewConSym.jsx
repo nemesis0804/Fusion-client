@@ -73,7 +73,7 @@ export default function ViewConSym() {
             }}
           >
             <MapPin size={24} />
-            Conferences/Symposium
+            Events Attended
           </Title>
 
           {error && (
@@ -125,7 +125,7 @@ export default function ViewConSym() {
               <thead>
                 <tr style={{ backgroundColor: "#f8f9fa" }}>
                   {[
-                    "Conference Name",
+                    "Event Name",
                     "Venue",
                     "Role",
                     "Start Date",
@@ -208,7 +208,7 @@ export default function ViewConSym() {
                         border: "1px solid #dee2e6",
                       }}
                     >
-                      No Conferences/Symposium found.
+                      No Events found.
                     </td>
                   </tr>
                 )}

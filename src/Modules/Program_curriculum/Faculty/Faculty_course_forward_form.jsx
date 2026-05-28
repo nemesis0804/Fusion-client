@@ -12,7 +12,6 @@ import {
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useForm } from "@mantine/form";
-import { notifications } from "@mantine/notifications";
 import { fetchFacultySuperiorData, fetchDisciplinesData } from "../api/api";
 import { host } from "../../../routes/globalRoutes";
 
@@ -41,7 +40,6 @@ function FacultyCourseForwardForm() {
     }
     return formatted.replace(/(AM|PM)/, (match) => match.toLowerCase());
   }
-
   const form = useForm({
     initialValues: {
       fileId: "",
@@ -63,18 +61,22 @@ function FacultyCourseForwardForm() {
     (proposal) => proposal.id === parseInt(id, 10),
   );
 
+  console.log(courseProposal);
   const [superiorData, setSuperiorData] = useState(null);
   const [receiverOptions, setReceiverOptions] = useState([]);
   const [designationOptions, setDesignationOptions] = useState([]);
   const [disciplines, setDisciplines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  console.log(form.values);
+  // const courseProposalData = Object.entries(courseProposal.fields);
+  // console.log(courseProposalData);
   useEffect(() => {
     const fetchSuperiorData = async () => {
       try {
         const response = await fetchFacultySuperiorData(username, role);
         const data = await response.json();
+        console.log(data);
         setSuperiorData(data.superior_data);
         if (data.superior_data) {
           setReceiverOptions([
@@ -101,6 +103,10 @@ function FacultyCourseForwardForm() {
     const fetchDisciplines = async () => {
       try {
         const response = await fetchDisciplinesData();
+        // console.log(response);
+
+        // const data = [...d.name, ...d.acronym, ...d.id];
+
         const disciplineList = response.map((discipline) => ({
           value: discipline.id.toString(),
           label: `${discipline.name} (${discipline.acronym})`,
@@ -115,6 +121,7 @@ function FacultyCourseForwardForm() {
     fetchDisciplines();
 
     if (id) {
+      // Fetch data from API and set form values
       form.setValues({
         fileId: courseProposal.file_id,
         uploader: username,
@@ -134,80 +141,15 @@ function FacultyCourseForwardForm() {
     }
   }, [id]);
 
-  const handleReject = async () => {
-    const token = localStorage.getItem("authToken");
-
-    try {
-      const response = await fetch(
-        `${host}/programme_curriculum/api/reject_form/${id}/?username=${username}&des=${role}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      if (response.ok) {
-        notifications.show({
-          title: "✅ Proposal Rejected Successfully!",
-          message: (
-            <div>
-              <Text size="sm" mb={8}>
-                <strong>The course proposal has been rejected.</strong>
-              </Text>
-              <Text size="xs" color="gray.7">
-                Rejection reason has been recorded.
-              </Text>
-            </div>
-          ),
-          color: "green",
-          autoClose: 5000,
-          style: {
-            backgroundColor: '#d4edda',
-            borderColor: '#c3e6cb',
-            color: '#155724',
-          },
-        });
-        
-        setTimeout(() => {
-          navigate("/programme_curriculum/faculty_outward_files");
-        }, 1500);
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to reject proposal");
-      }
-    } catch (err) {
-      console.error("Rejection error:", err);
-      
-      notifications.show({
-        title: "❌ Failed to Reject Proposal",
-        message: (
-          <div>
-            <Text size="sm" mb={8}>
-              <strong>Error rejecting proposal: {err.message}</strong>
-            </Text>
-            <Text size="xs" color="gray.7">
-              Please try again or contact support.
-            </Text>
-          </div>
-        ),
-        color: "red",
-        autoClose: 7000,
-        style: {
-          backgroundColor: '#f8d7da',
-          borderColor: '#f5c6cb',
-          color: '#721c24',
-        },
-      });
-    }
-  };
+  if (loading) return <div>Loading...</div>;
+  //   if (error) return <div>Error: {error}</div>;
+  if (!superiorData) return <div>No superior data found</div>;
 
   const handleSubmit = async (values) => {
     const token = localStorage.getItem("authToken");
 
     try {
+      // Prepare the payload with all form values
       const payload = {
         fileId: values.fileId,
         uploader: values.uploader,
@@ -223,69 +165,31 @@ function FacultyCourseForwardForm() {
           method: "POST",
           headers: {
             Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
         },
       );
 
       if (response.ok) {
-        notifications.show({
-          title: "✅ Form Submitted Successfully!",
-          message: (
-            <div>
-              <Text size="sm" mb={8}>
-                <strong>The course proposal form has been submitted.</strong>
-              </Text>
-              <Text size="xs" color="gray.7">
-                Your submission has been forwarded for review.
-              </Text>
-            </div>
-          ),
-          color: "green",
-          autoClose: 5000,
-          style: {
-            backgroundColor: '#d4edda',
-            borderColor: '#c3e6cb',
-            color: '#155724',
-          },
-        });
-        
-        setTimeout(() => {
-          navigate("/programme_curriculum/faculty_outward_files");
-        }, 1500);
-      } else {
+        // alert("Form submitted successfully!");
+        navigate("/programme_curriculum/faculty_outward_files");
+      }
+      if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to submit form");
       }
-    } catch (e) {
-      console.error("Submission error:", e);
-      
-      notifications.show({
-        title: "❌ Failed to Submit Form",
-        message: (
-          <div>
-            <Text size="sm" mb={8}>
-              <strong>Error submitting form: {e.message}</strong>
-            </Text>
-            <Text size="xs" color="gray.7">
-              Please check your inputs and try again.
-            </Text>
-          </div>
-        ),
-        color: "red",
-        autoClose: 7000,
-        style: {
-          backgroundColor: '#f8d7da',
-          borderColor: '#f5c6cb',
-          color: '#721c24',
-        },
-      });
+
+      const responseData = await response.json();
+      alert("Form submitted successfully!");
+      console.log("Submission successful:", responseData);
+      // Optionally redirect or reset the form
+      // navigate('/success-page');
+      // form.reset();
+    } catch (errors) {
+      console.error("Submission error:", errors);
+      alert(`Error submitting form: ${error.message}`);
     }
   };
-
-  if (loading) return <div>Loading...</div>;
-  if (!superiorData) return <div>No superior data found</div>;
 
   return (
     <div
@@ -308,6 +212,7 @@ function FacultyCourseForwardForm() {
           marginTop: "1rem",
         }}
       >
+        {/* Form Section */}
         <div
           style={{
             maxWidth: "1200px",
@@ -414,12 +319,8 @@ function FacultyCourseForwardForm() {
             </Stack>
 
             <Group position="right" mt="lg">
-              <Button
-                variant="outline"
-                className="cancel-btn"
-                onClick={handleReject}
-              >
-                Reject
+              <Button variant="outline" className="cancel-btn">
+                Cancel
               </Button>
               <Button type="submit" className="submit-btn">
                 Submit

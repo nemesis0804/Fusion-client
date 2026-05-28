@@ -139,8 +139,8 @@
 
 .semester-dropdown {
   position: absolute;
-  right: 198px;
-  top: 110px;
+  right: 200px;
+  top: 170px;
   background-color: white;
   border: 1px solid #ddd;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -153,8 +153,8 @@
 }
 .editbatch-dropdown {
   position: absolute;
-  right: 198px;
-  top: 260px;
+  right: 200px;
+  top: 334px;
   background-color: white;
   border: 1px solid #ddd;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -169,8 +169,8 @@
 }
 .Linkbatch-dropdown {
   position: absolute;
-  right: 198px;
-  top: 310px;
+  right: 200px;
+  top: 384px;
   background-color: white;
   border: 1px solid #ddd;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -223,7 +223,7 @@
 
 .instigate-semester-dropdown {
   position: absolute;
-  right: 198px;
+  right: 200px;
   top: 118px;
   background-color: white;
   border: 1px solid #ddd;
@@ -376,10 +376,6 @@
 }
 
 .dropdown-btn.blue-btn:disabled {
-  padding-top: 10px;
-  padding-bottom: 10px;
-  padding-left: 5px;
-  padding-right: 5px;
   background-color: #ccc;
   cursor: not-allowed;
 }

@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useNavigate } from "react-router-dom";
-import { notifications } from "@mantine/notifications";
+// import { useNavigate } from "react-router-dom";
 import { fetchDisciplinesData, fetchAllCourses } from "../api/api";
 import { host } from "../../../routes/globalRoutes";
 
@@ -42,13 +42,6 @@ function Admin_add_course_proposal_form() {
       labEvaluation: 15,
       attendance: 5,
     },
-    validate: {
-      courseName: (value) => (!value ? "Course name is required" : null),
-      courseCode: (value) => (!value ? "Course code is required" : null),
-      discipline: (value) => (!value ? "Discipline is required" : null),
-      syllabus: (value) => (!value ? "Syllabus is required" : null),
-      references: (value) => (!value ? "References are required" : null),
-    },
   });
 
   const navigate = useNavigate();
@@ -59,6 +52,9 @@ function Admin_add_course_proposal_form() {
     const fetchDisciplines = async () => {
       try {
         const response = await fetchDisciplinesData();
+        // console.log(response);
+
+        // const data = [...d.name, ...d.acronym, ...d.id];
 
         const disciplineList = response.map((discipline) => ({
           name: `${discipline.name} (${discipline.acronym})`,
@@ -66,18 +62,14 @@ function Admin_add_course_proposal_form() {
         }));
         setDisciplines(disciplineList);
       } catch (fetchError) {
-        notifications.show({
-          title: "Error",
-          message: "Failed to load disciplines. Please refresh the page.",
-          color: "red",
-          autoClose: 4000,
-        });
+        console.error("Error fetching disciplines: ", fetchError);
       }
     };
 
     const fetchCourses = async () => {
       try {
         const response = await fetchAllCourses();
+        // console.log("Courses data:", response);
 
         const courseList = response.map((course) => ({
           name: `${course.name} (${course.code})`,
@@ -85,12 +77,7 @@ function Admin_add_course_proposal_form() {
         }));
         setCourses(courseList);
       } catch (error) {
-        notifications.show({
-          title: "Error",
-          message: "Failed to load courses. Please refresh the page.",
-          color: "red",
-          autoClose: 4000,
-        });
+        console.error("Error fetching courses: ", error);
       }
     };
 
@@ -100,6 +87,7 @@ function Admin_add_course_proposal_form() {
 
   const handleSubmit = async (values) => {
     const apiUrl = `${host}/programme_curriculum/api/admin_add_course/`;
+    console.log("Form Values:", values);
 
     const payload = {
       name: values.courseName,
@@ -125,6 +113,7 @@ function Admin_add_course_proposal_form() {
       pre_requisits: values.preRequisites,
       max_seats: values.maxSeats,
     };
+    console.log("Payload: ", payload);
     try {
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -135,84 +124,46 @@ function Admin_add_course_proposal_form() {
       if (response.ok) {
         localStorage.setItem("AdminCoursesCachechange", "true");
         const data = await response.json();
-        
-        notifications.show({
-          title: "✅ Course Added Successfully!",
-          message: (
-            <div>
-              <Text size="sm" mb={8}>
-                <strong>Course "{values.courseName}" ({values.courseCode}) has been created.</strong>
-              </Text>
-              <Text size="xs" color="gray.7">
-                Credits: {values.courseCredit} | Version: {values.courseVersion}
-              </Text>
-            </div>
-          ),
-          color: "green",
-          autoClose: 5000,
-          style: {
-            backgroundColor: '#d4edda',
-            borderColor: '#c3e6cb',
-            color: '#155724',
-          },
-        });
-        
-        form.reset();
-        setTimeout(() => {
-          navigate("/programme_curriculum/admin_courses");
-        }, 1500);
+        alert("Course added successfully!");
+        console.log("Response Data:", data);
+        navigate("/programme_curriculum/admin_courses");
       } else {
         const errorText = await response.text();
-        
-        notifications.show({
-          title: "❌ Failed to Add Course",
-          message: (
-            <div>
-              <Text size="sm" mb={8}>
-                <strong>Unable to create course. Please try again.</strong>
-              </Text>
-              <Text size="xs" color="gray.7">
-                Please check your inputs and try again.
-              </Text>
-            </div>
-          ),
-          color: "red",
-          autoClose: 7000,
-          style: {
-            backgroundColor: '#f8d7da',
-            borderColor: '#f5c6cb',
-            color: '#721c24',
-          },
-        });
+        console.error("Error:", errorText);
+        alert("Failed to add course.");
       }
     } catch (error) {
-      notifications.show({
-        title: "🚨 Network Error",
-        message: (
-          <div>
-            <Text size="sm" mb={8}>
-              <strong>Connection error occurred while adding course.</strong>
-            </Text>
-            <Text size="xs" color="gray.7">
-              Please check your internet connection and try again.
-            </Text>
-          </div>
-        ),
-        color: "red",
-        autoClose: 7000,
-        style: {
-          backgroundColor: '#f8d7da',
-          borderColor: '#f5c6cb',
-          color: '#721c24',
-        },
-      });
+      console.error("Network Error:", error);
+      alert("An error occurred. Please try again.");
     }
   };
 
+  // const breadcrumbItems = [
+  //   { title: "Program and Curriculum", href: "#" },
+  //   { title: "Curriculums", href: "#" },
+  //   { title: "CSE UG Curriculum", href: "#" },
+  // ].map((item, index) => (
+  //   <Anchor href={item.href} key={index}>
+  //     {item.title}
+  //   </Anchor>
+  // ));
+  // console.log(form);
   return (
     <div
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
     >
+      {/* {console.log("Fin : ", disciplines)}
+      {console.log("CourFin: ", courses)} */}
+      {/* <Breadcrumbs>{breadcrumbItems}</Breadcrumbs>
+
+      <Group spacing="xs" className="program-options" position="center" mt="md">
+        <Text>Programmes</Text>
+        <Text className="active">Curriculums</Text>
+        <Text>Courses</Text>
+        <Text>Disciplines</Text>
+        <Text>Batches</Text>
+      </Group> */}
+
       <Container
         fluid
         style={{
@@ -526,16 +477,16 @@ function Admin_add_course_proposal_form() {
                   placeholder="Select Discipline"
                   data={disciplines.map((discipline) => ({
                     label: discipline.name,
-                    value: discipline.id.toString(),
+                    value: discipline.id.toString(), // Ensure value is a string for the MultiSelect component
                     ...discipline,
                   }))}
                   value={
                     Array.isArray(form.values.discipline)
-                      ? form.values.discipline.map(String)
+                      ? form.values.discipline.map(String) // Convert integers to strings for the MultiSelect component
                       : []
                   }
                   onChange={(value) => {
-                    const integerValues = value ? value.map(Number) : [];
+                    const integerValues = value ? value.map(Number) : []; // Convert selected strings back to integers
                     form.setFieldValue("discipline", integerValues);
                   }}
                   required
@@ -577,8 +528,6 @@ function Admin_add_course_proposal_form() {
                   onChange={(event) =>
                     form.setFieldValue("syllabus", event.currentTarget.value)
                   }
-                  error={form.errors.syllabus}
-                  required
                 />
                 <Textarea
                   label="References"
@@ -587,8 +536,6 @@ function Admin_add_course_proposal_form() {
                   onChange={(event) =>
                     form.setFieldValue("references", event.currentTarget.value)
                   }
-                  error={form.errors.references}
-                  required
                 />
                 <Group
                   grow

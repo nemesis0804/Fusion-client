@@ -139,34 +139,19 @@ function InwardFilesTable({ inwardFiles, username, role, onArchive }) {
                     >
                       View
                     </Button>
-                    {inward.is_rejected ? (
-                      <Button
-                        variant="filled"
-                        style={{ backgroundColor: "#e74c3c" }}
-                        disabled
-                      >
-                        Rejected
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="filled"
-                        style={{ backgroundColor: "#2ecc71" }}
-                        onClick={() => {
-                          if (role === "Dean Academic") {
-                            navigate(
-                              `/programme_curriculum/forward_course_forms_II/?id=${inward.id}`,
-                            );
-                          } else {
-                            navigate(
-                              `/programme_curriculum/forward_course_forms/?id=${inward.id}`,
-                            );
-                          }
-                        }}
-                      >
-                        Submit
-                      </Button>
-                    )}
-
+                    <Button
+                      variant="filled"
+                      style={{ backgroundColor: "#2ecc71" }}
+                      onClick={() => {
+                        if (role === "Dean Academic") {
+                          window.location.href = `/programme_curriculum/forward_course_forms_II/?id=${inward.id}`;
+                        } else {
+                          window.location.href = `/programme_curriculum/forward_course_forms/?id=${inward.id}`;
+                        }
+                      }}
+                    >
+                      Submit
+                    </Button>
                     <Button
                       variant="filled"
                       style={{ backgroundColor: "gray" }}

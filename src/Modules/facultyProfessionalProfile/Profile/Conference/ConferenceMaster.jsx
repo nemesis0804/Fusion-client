@@ -11,9 +11,7 @@ function VisitsMaster({ setBreadCrumbItems }) {
   const tabsListRef = useRef(null);
 
   // Tab items data
-  const tabItems = [
-    { title: "Conference/Synopsium", component: <Conference /> },
-  ];
+  const tabItems = [{ title: "Events Attended", component: <Conference /> }];
 
   // Handle tab change (previous/next)
   const handleTabChange = (direction) => {
