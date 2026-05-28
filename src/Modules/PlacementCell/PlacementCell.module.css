@@ -1,0 +1,128 @@
+.fusionText {
+  font-size: 1rem;
+}
+
+@media (min-width: 64em) {
+  .fusionText {
+    font-size: 1.5rem;
+  }
+}
+
+.fusionCaretCircleIcon {
+  font-size: 2rem;
+}
+
+@media (min-width: 64em) {
+  .fusionCaretCircleIcon {
+    font-size: 1.5rem;
+  }
+}
+
+.fusionActiveRecentTab {
+  background-color: #15abff13;
+  color: #15abff;
+  font-weight: 800;
+  border-radius: 4px;
+}
+
+.fusionTabsContainer {
+  flex-shrink: 1;
+  max-width: 80vw;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+}
+
+.fusionTabsContainer::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Consistent page-level wrapper used by every tab component ── */
+.pageContent {
+  width: 100%;
+  padding: 24px 28px 40px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .pageContent {
+    padding: 16px 12px 28px;
+  }
+}
+
+/* Cards */
+.card {
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: white;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.card:hover {
+  box-shadow: 0 6px 24px rgba(21, 171, 255, 0.14);
+  transform: translateY(-2px);
+}
+
+.statusBadge {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #888;
+}
+
+.emptyState svg {
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+
+.statsCard {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 1.25rem;
+  color: white;
+  min-height: 100px;
+}
+
+.statsCard.green {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.statsCard.orange {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.statsCard.blue {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.statsValue {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statsLabel {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+
+.noticeFilters {
+  margin-bottom: 0.5rem;
+}
+
+.noticeHighCard {
+  border-left: 4px solid #fa5252;
+}
